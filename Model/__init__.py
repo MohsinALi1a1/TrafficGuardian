@@ -6,4 +6,10 @@ from Model.Camera import Camera
 from Model.CameraChowki import CameraChowki
 from Model.Shift import Shift
 from Model.TrafficWarden import TrafficWarden
+from Model.WadenChowki import WardenChowki
+from Model.User import User
+from Model.Violation import Violation
+from Model.ViolationFine import ViolationFine
+from Model.Vehicle import Vehicle
+from Model.ViolationHistory import ViolationHistory
 from Model.Configure import db,app

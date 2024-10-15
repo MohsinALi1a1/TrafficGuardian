@@ -22,3 +22,5 @@ class Camera(db.Model):
 
     # Define the many-to-many relationship with Chowki
     chowkis = db.relationship('CameraChowki', back_populates='cameras')
+    #back ref
+    violation_histories = db.relationship("ViolationHistory", back_populates="camera")

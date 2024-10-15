@@ -19,4 +19,7 @@ class Chowki(db.Model):
     # Define the many-to-many relationship with Camera
     cameras = db.relationship('CameraChowki', back_populates='chowki')
 
+    #back Relationship
+    warden_chowkis = db.relationship("WardenChowki", back_populates="chowki")
+
 

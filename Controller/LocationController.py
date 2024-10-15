@@ -3,10 +3,16 @@ from Model import City,Place,Direction ,db
 
 
 class LocationController:
+
     @staticmethod
     def get_all_City():
         cities=City.query.all()
         return [{'id':city.id ,'name':city.name }for city in cities]
+
+    @staticmethod
+    def get_city_name_by_id(ID):
+        city = City.query.get_or_404(ID)
+        return city.name
 
 
     @staticmethod

@@ -1,12 +1,15 @@
+from datetime import datetime
 
 from Model.Configure import app
 from flask import  request ,jsonify
 from Controller import LocationController
 from Controller import CameraChowkiController
+from Controller import WardenChowkiController
 
 
 
 ########################################  City  ############################################
+
 @app.route('/city', methods=['GET'])
 def get_all_cities():
     try:
@@ -576,6 +579,135 @@ def update_camerachowki():
         return jsonify({"message": result}), 200  # Return the result with a 200 status code
     except Exception as exp:
         return jsonify({'error': str(exp)}), 500
+
+########################################  Shift  ############################################
+
+@app.route('/shift', methods=['GET'])
+def get_all_shift():
+    try:
+        shift_list = WardenChowkiController.get_all_Shift()
+        print(shift_list)
+        return jsonify(shift_list)
+    except Exception as exp:
+        return jsonify({'error': str(exp)}), 500
+
+
+@app.route('/shiftbyid', methods=['GET'])
+def get_shift_by_id():
+    try:
+        data = request.get_json()
+        shift_id = data.get('id')
+        print(shift_id)
+        if not shift_id:
+            return jsonify({"error": "Shift id is required"}), 400
+        shift=WardenChowkiController.get_shift_by_id(shift_id)
+        return jsonify(shift)
+    except Exception as exp:
+        return jsonify({'error': str(exp)}), 500
+
+
+@app.route('/shiftbyname', methods=['GET'])
+def get_shift_by_name():
+    try:
+        data = request.get_json()
+        shift_name = data.get('shiftname')
+        shift = WardenChowkiController.get_shift_by_name(shift_name)
+        return jsonify(shift)
+    except Exception as exp:
+        return jsonify({'error': str(exp)}), 500
+
+
+
+@app.route('/addshift', methods=['POST'])
+def add_shift():
+    try:
+        data = request.get_json()
+        shift_name = data.get('shiftname')
+        shift_starttime = data.get('starttime')
+        shift_endtime = data.get('endtime')
+
+        if not shift_name or not shift_starttime or not shift_endtime:
+            return jsonify({"error": "Shift name, start time, and end time are required."}), 400
+
+        # Convert string times to time objects
+        shift_starttime = datetime.strptime(shift_starttime, "%H:%M:%S").time()
+        shift_endtime = datetime.strptime(shift_endtime, "%H:%M:%S").time()
+
+        # Add the new shift
+        shift_response = WardenChowkiController.add_shift(shift_name, shift_starttime, shift_endtime)
+
+        return jsonify(shift_response), 201
+    except ValueError as ve:
+        return jsonify({'error': 'Invalid time format. Use HH:MM:SS.'}), 400
+    except Exception as exp:
+        return jsonify({'error': str(exp)}), 500
+
+
+@app.route('/deleteshift', methods=['DELETE'])
+def delete_shift_by_name():
+    try:
+        data = request.get_json()
+        shift_name = data.get('shiftname')
+        shift_starttime = data.get('starttime')
+        shift_endtime = data.get('endtime')
+
+        if not shift_name or not shift_starttime or not shift_endtime:
+            return jsonify({"error": "Shift name, start time, and end time are required."}), 400
+
+        # Convert string times to time objects
+        shift_starttime = datetime.strptime(shift_starttime, "%H:%M:%S").time()
+        shift_endtime = datetime.strptime(shift_endtime, "%H:%M:%S").time()
+        message = WardenChowkiController.update_shift(shift_name,shift_starttime,shift_endtime)
+        return jsonify(message)
+    except Exception as exp:
+        return jsonify({'error': str(exp)}), 500
+
+
+
+# Route to update a city
+@app.route('/updateshift', methods=['PUT'])
+def update_shifty():
+    try:
+        data = request.get_json()
+        city_name = data.get('name')
+        new_name = data.get('new_name')
+
+        if not city_name or not new_name:
+            return jsonify({"error": "Both current city name and new name are required"}), 400
+
+        message=LocationController.update_city(city_name, new_name)
+        return jsonify(message)
+    except Exception as exp:
+        return jsonify({'error': str(exp)}), 500
+
+########################################  Traffic Warden  ############################################
+
+@app.route('/trafficwarden', methods=['GET'])
+def get_all_trafficwarden():
+    try:
+        warden_list = WardenChowkiController.get_all_warden()
+        print(warden_list)
+        return jsonify(warden_list)
+    except Exception as exp:
+        return jsonify({'error': str(exp)}), 500
+
+
+
+@app.route('/wardensincity', methods=['GET'])
+def get_warden_in_city():
+    try:
+        data = request.get_json()
+        city_name = data.get('cityname')
+        if not city_name:
+            return jsonify({"error": "City name is required"}), 400
+        warden=WardenChowkiController.get_all_warden_city(city_name)
+        if warden:
+            return jsonify(warden)
+        else:
+            return ({"Invalid": f"No traffic Warden exist from the location {city_name}"}), 400
+    except Exception as exp:
+        return jsonify({'error': str(exp)}), 500
+
 
 
 #########################################################################################################################################

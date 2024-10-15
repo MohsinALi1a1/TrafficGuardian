@@ -10,3 +10,19 @@
 # );
 
 from Model.Configure import  db
+
+class WardenChowki(db.Model):
+    __tablename__ = 'WardenChowki'
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    warden_id = db.Column(db.Integer, db.ForeignKey('TrafficWarden.id'))
+    chowki_id = db.Column(db.Integer, db.ForeignKey('Chowki.id'))
+    shift_id = db.Column(db.Integer, db.ForeignKey('Shift.id'))
+    duty_date = db.Column(db.Date)
+
+    # Relationships
+    warden = db.relationship("TrafficWarden", back_populates="warden_chowkis")
+    chowki = db.relationship("Chowki", back_populates="warden_chowkis")
+    shift = db.relationship("Shift", back_populates="warden_chowkis")
+
+
+

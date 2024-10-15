@@ -27,3 +27,7 @@ class TrafficWarden(db.Model):
 
     # Relationship with City
     city = db.relationship('City', back_populates='trafficwardens')
+
+
+    #BackRelationship
+    warden_chowkis = db.relationship("WardenChowki", back_populates="warden")

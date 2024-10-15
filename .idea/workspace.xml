@@ -4,35 +4,27 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="6099f9b0-72b9-42ed-926f-93f4c7ea9004" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/.idea/TrafficGuardian.iml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/inspectionProfiles/profiles_settings.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/modules.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Controller/CameraChowkiController.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Controller/LocationController.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Controller/__init__.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Model/Camera.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Model/CameraChowki.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Model/CameraViolation.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Model/Challan.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Model/Chowki.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Model/ChowkiAlert.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Model/City.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Model/Configure.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Model/Direction.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Model/Place.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Model/Shift.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Model/TrafficWarden.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Model/User.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Model/Vehicle.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Model/ViolationHistory.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Model/ViolationType.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Model/WadenChowki.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Model/__init__.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Router.py" afterDir="false" />
+    <list default="true" id="6099f9b0-72b9-42ed-926f-93f4c7ea9004" name="Changes" comment="Initial Commit">
+      <change afterPath="$PROJECT_DIR$/Controller/ChallanController.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controller/WardenChowkiController.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Model/Violation.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Model/ViolationFine.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Controller/LocationController.py" beforeDir="false" afterPath="$PROJECT_DIR$/Controller/LocationController.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Controller/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/Controller/__init__.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Model/Camera.py" beforeDir="false" afterPath="$PROJECT_DIR$/Model/Camera.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Model/CameraViolation.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Model/Chowki.py" beforeDir="false" afterPath="$PROJECT_DIR$/Model/Chowki.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Model/ChowkiAlert.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Model/Shift.py" beforeDir="false" afterPath="$PROJECT_DIR$/Model/Shift.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Model/TrafficWarden.py" beforeDir="false" afterPath="$PROJECT_DIR$/Model/TrafficWarden.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Model/User.py" beforeDir="false" afterPath="$PROJECT_DIR$/Model/User.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Model/Vehicle.py" beforeDir="false" afterPath="$PROJECT_DIR$/Model/Vehicle.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Model/ViolationHistory.py" beforeDir="false" afterPath="$PROJECT_DIR$/Model/ViolationHistory.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Model/ViolationType.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Model/WadenChowki.py" beforeDir="false" afterPath="$PROJECT_DIR$/Model/WadenChowki.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Model/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/Model/__init__.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Router.py" beforeDir="false" afterPath="$PROJECT_DIR$/Router.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -47,8 +39,25 @@
     </option>
   </component>
   <component name="Git.Settings">
+    <option name="RECENT_BRANCH_BY_REPOSITORY">
+      <map>
+        <entry key="$PROJECT_DIR$" value="master" />
+      </map>
+    </option>
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
+  <component name="GitHubPullRequestSearchHistory">{
+  &quot;lastFilter&quot;: {
+    &quot;state&quot;: &quot;OPEN&quot;,
+    &quot;assignee&quot;: &quot;MohsinALi1a1&quot;
+  }
+}</component>
+  <component name="GithubPullRequestsUISettings">{
+  &quot;selectedUrlAndAccountId&quot;: {
+    &quot;url&quot;: &quot;https://github.com/MohsinALi1a1/TrafficGuardian.git&quot;,
+    &quot;accountId&quot;: &quot;0fc19df7-be3b-4f10-9988-fc3943e7f7a6&quot;
+  }
+}</component>
   <component name="ProblemsViewState">
     <option name="selectedTabId" value="CurrentFile" />
   </component>
@@ -71,7 +80,7 @@
     &quot;Python.Router.executor&quot;: &quot;Run&quot;,
     &quot;Python.main.executor&quot;: &quot;Run&quot;,
     &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;master&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;TrafficGuardian&quot;,
     &quot;ignore.virus.scanning.warn.message&quot;: &quot;true&quot;,
     &quot;settings.editor.selected.configurable&quot;: &quot;com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable&quot;
   }
@@ -143,7 +152,31 @@
       <option name="presentableId" value="Default" />
       <updated>1726396308468</updated>
     </task>
+    <task id="LOCAL-00001" summary="Initial Commit">
+      <option name="closed" value="true" />
+      <created>1728906983723</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1728906983723</updated>
+    </task>
+    <option name="localTasksCounter" value="2" />
     <servers />
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="Initial Commit" />
+    <option name="LAST_COMMIT_MESSAGE" value="Initial Commit" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>

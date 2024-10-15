@@ -13,3 +13,6 @@ class Shift(db.Model):
     shift_type = db.Column(db.Enum('morning', 'evening', 'night'), nullable=False)
     start_time = db.Column(db.Time, nullable=False)
     end_time = db.Column(db.Time, nullable=False)
+
+    #Back Ref
+    warden_chowkis = db.relationship("WardenChowki", back_populates="shift")
