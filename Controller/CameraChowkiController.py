@@ -106,11 +106,44 @@ class CameraChowkiController:
         db.session.commit()
         return {'Successfully': f'{chowki.name} is successfully deleted'}, 201
 
+    def get_all_Chowki_bycity(city_name):
+        # Query the city to get its ID
+        city = db.session.query(City).filter(City.name == city_name).first()
 
 
+        # Query to get chowkis related to the city
+        results = (
+            db.session.query(
+                City.name.label('city_name'),
+                Place.name.label('place_name'),
+                Chowki.id.label('chowki_id'),
+                Chowki.name.label('chowki_name')
+                # Add linked_cameras if it's a valid column or relationship
+                # Chowki.linked_cameras.label('linked_cameras')
+            )
+            .select_from(City)  # Set the base entity for the query
+            .join(Place, Place.city_id == City.id)  # Explicitly join Place
+            .join(Chowki, Chowki.place_id == Place.id)  # Explicitly join Chowki
+            .filter(City.id == city.id)  # Use city.id instead of city_name
+            .group_by(City.name, Place.name, Chowki.id, Chowki.name)
+            .all()
+        )
 
+        # Process results and create a list of dictionaries
+        result_list = []
+        for row in results:
+            result_list.append({
+                'city_name': row.city_name,
+                'place_name': row.place_name,
+                'chowki_id': row.chowki_id,
+                'chowki_name': row.chowki_name,
+                # Include linked_cameras if added in the query
+                # 'linked_cameras': row.linked_cameras
+            })
 
-##################################################CameraChowki#############################################################################
+        return result_list
+
+    ##################################################CameraChowki#############################################################################
 
     @staticmethod
     def get_all_ChowkiCamera_byplace(place_name):

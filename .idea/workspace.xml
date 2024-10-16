@@ -4,26 +4,10 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="6099f9b0-72b9-42ed-926f-93f4c7ea9004" name="Changes" comment="Initial Commit">
-      <change afterPath="$PROJECT_DIR$/Controller/ChallanController.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Controller/WardenChowkiController.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Model/Violation.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Model/ViolationFine.py" afterDir="false" />
+    <list default="true" id="6099f9b0-72b9-42ed-926f-93f4c7ea9004" name="Changes" comment="15-10-2024(Traffic Warden)">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Controller/LocationController.py" beforeDir="false" afterPath="$PROJECT_DIR$/Controller/LocationController.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Controller/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/Controller/__init__.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Model/Camera.py" beforeDir="false" afterPath="$PROJECT_DIR$/Model/Camera.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Model/CameraViolation.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Model/Chowki.py" beforeDir="false" afterPath="$PROJECT_DIR$/Model/Chowki.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Model/ChowkiAlert.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Model/Shift.py" beforeDir="false" afterPath="$PROJECT_DIR$/Model/Shift.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Model/TrafficWarden.py" beforeDir="false" afterPath="$PROJECT_DIR$/Model/TrafficWarden.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Model/User.py" beforeDir="false" afterPath="$PROJECT_DIR$/Model/User.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Model/Vehicle.py" beforeDir="false" afterPath="$PROJECT_DIR$/Model/Vehicle.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Model/ViolationHistory.py" beforeDir="false" afterPath="$PROJECT_DIR$/Model/ViolationHistory.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Model/ViolationType.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Model/WadenChowki.py" beforeDir="false" afterPath="$PROJECT_DIR$/Model/WadenChowki.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Model/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/Model/__init__.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Controller/CameraChowkiController.py" beforeDir="false" afterPath="$PROJECT_DIR$/Controller/CameraChowkiController.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Controller/WardenChowkiController.py" beforeDir="false" afterPath="$PROJECT_DIR$/Controller/WardenChowkiController.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Router.py" beforeDir="false" afterPath="$PROJECT_DIR$/Router.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -160,7 +144,15 @@
       <option name="project" value="LOCAL" />
       <updated>1728906983723</updated>
     </task>
-    <option name="localTasksCounter" value="2" />
+    <task id="LOCAL-00002" summary="15-10-2024(Traffic Warden)">
+      <option name="closed" value="true" />
+      <created>1728991204212</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1728991204212</updated>
+    </task>
+    <option name="localTasksCounter" value="3" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -176,7 +168,8 @@
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="Initial Commit" />
-    <option name="LAST_COMMIT_MESSAGE" value="Initial Commit" />
+    <MESSAGE value="15-10-2024(Traffic Warden)" />
+    <option name="LAST_COMMIT_MESSAGE" value="15-10-2024(Traffic Warden)" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>

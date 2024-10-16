@@ -708,6 +708,86 @@ def get_warden_in_city():
     except Exception as exp:
         return jsonify({'error': str(exp)}), 500
 
+@app.route('/wardentbycnic', methods=['GET'])
+def get_warden_by_cnic():
+    try:
+        data = request.get_json()
+        warden_cnic = data.get('cnic')
+        warden = WardenChowkiController.get_warden_by_cnic(warden_cnic)
+        return jsonify(warden)
+    except Exception as exp:
+        return jsonify({'error': str(exp)}), 500
+
+
+@app.route('/addtrafficwarden', methods=['POST'])
+def add_warden():
+    try:
+        data = request.get_json()
+        name = data.get('name')
+        badge_number = data.get('badgenumber')
+        address = data.get('address')
+        cnic = data.get('cnic')
+        email = data.get('email')
+        mobile_number = data.get('mobilenumber')
+        city_name=data.get('cityname')
+
+        if not name or not badge_number or not address or not cnic or not email or not mobile_number or not city_name:
+            return jsonify({"error": "Warden name, badge_number , address, cnic , email, mobile_number, and city_name are required."}), 400
+
+        # Add the new warden
+        new_warden = WardenChowkiController.add_warden(name, badge_number, address, cnic, email, mobile_number, city_name)
+        return jsonify(new_warden), 201
+    except Exception as exp:
+        return jsonify({'error': str(exp)}), 500
+
+
+
+@app.route('/deletewarden', methods=['DELETE'])
+def delete_warden_route():
+    try:
+        data = request.get_json()
+        cnic = data.get('cnic')
+
+        if not cnic:
+            return jsonify({"error": "CNIC  is required"}), 400
+
+        return WardenChowkiController.delete_warden(cnic)
+    except Exception as exp:
+        return jsonify({'error': str(exp)}), 500
+
+
+@app.route('/updatewarden', methods=['PUT'])
+def update_warden_route():
+
+    try:
+        data = request.get_json()
+        cnic = data.get('cnic')
+        return WardenChowkiController.update_warden(
+            cnic,
+            name=data.get('name'),
+            badge_number=data.get('badgenumber'),
+            address=data.get('address'),
+            email=data.get('email'),
+            mobile_number=data.get('mobilenumber'),
+            city_name=data.get('cityname')
+        )
+    except Exception as exp:
+        return jsonify({'error': str(exp)}), 500
+########################################  WardenChowki  ############################################
+
+@app.route('/DutyRoaster', methods=['GET'])
+def get_dutyroster():
+    try:
+
+        Duty=WardenChowkiController.create_duty_roster()
+        # if Duty:
+        #     return jsonify(Duty)
+        # else:
+        #     return jsonify({"Invalid": f"No traffic Warden exist from the location "}), 400
+        return jsonify({"sucessfully":Duty})
+    except Exception as exp:
+        return jsonify({'error': str(exp)}), 500
+
 
 
 #########################################################################################################################################
