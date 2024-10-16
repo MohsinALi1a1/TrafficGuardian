@@ -1,10 +1,11 @@
-from flask import jsonify
-
-from Model import Camera, Place, Direction, db, Chowki, CameraChowki, City, Shift, TrafficWarden
+from Model import db, City, Shift, TrafficWarden, WardenChowki, Chowki, Place
 from Controller import LocationController, CameraChowkiController
 import random
+from datetime import datetime
+
 
 class WardenChowkiController:
+
     ##################################################Shift#########################################################################
     @staticmethod
     def get_all_Shift():
@@ -220,6 +221,7 @@ class WardenChowkiController:
             total_shifts = len(shifts)
             print("Numbers of Wardens = ",total_wardens ,"Numbers of Chowki = ", total_chowkis ,"Numbers of Shifts = ",total_shifts)
             if not chowkis or not wardens:
+
                 continue
             available_wardens = wardens.copy()
             # Calculate the warden requirement per chowki
@@ -233,13 +235,13 @@ class WardenChowkiController:
                 chowki_place = chowki['place_name']
                 chowki_city = chowki['city_name']
                 chowki_name = chowki['chowki_name']
-
+                id=chowki['chowki_id']
 
                 #print(chowki_city,chowki_place,chowki_name)
-                schedule[chowki_name] = {"shifts": [],"chowkicity":chowki_city,"chowkiplace":chowki_place}
+                schedule[chowki_name] = {"shifts": [],"chowkicity":chowki_city,"chowkiplace":chowki_place ,"chowkiid":id}
 
-
-                for shift_index in range(total_shifts):
+                for shift_index in range(1, total_shifts + 1):
+                    # Your code logic here
                     random.shuffle(available_wardens)
 
                     if len(available_wardens) < wardens_per_chowki:
@@ -268,6 +270,7 @@ class WardenChowkiController:
                 assignment['warden']=assign_wardens
                 assignment['city']=  chowki_data["chowkicity"]
                 assignment['place'] = chowki_data["chowkiplace"]
+                assignment['id']=chowki_data["chowkiid"]
                 count=1
 
                 dutyroster.append(assignment)
@@ -275,8 +278,112 @@ class WardenChowkiController:
                     if(count<= len(assign_wardens)):
                         print(f"    Assigned Wardens: {war}")
 
-
+                        new_assignment = WardenChowkiController.assignwarden(war['id'], chowki_data["chowkiid"], shift['shift_index'])
             print()
 
-
         return dutyroster
+
+    @staticmethod
+    def assignwarden(warden_id, chowki_id, shift_id, duty_date=datetime.today().strftime('%Y-%m-%d')):
+        # Check for required parameters
+        if not warden_id or not chowki_id or not shift_id:
+            return {"error": "warden_id, chowki_id, and shift_id are required."}, 400  # Use 400 for bad request
+
+        # Create a new assignment
+        new_assignment = WardenChowki(warden_id=warden_id, chowki_id=chowki_id, shift_id=shift_id, duty_date=duty_date)
+
+        try:
+            db.session.add(new_assignment)
+            db.session.commit()
+        except Exception as e:
+            db.session.rollback()  # Roll back in case of an error
+            return {"error": f"An error occurred while assigning the job: {str(e)}"}, 500  # Use 500 for server error
+
+        return {
+            'message': f'Successfully assigned Warden {warden_id} to chowki {chowki_id} for shift {shift_id} on {duty_date}.'
+        }, 201
+
+    @staticmethod
+    def get_all_assignments_on_last_assign_date():
+        # Step 1: Get the latest assignment date
+        latest_assignment = (
+            db.session.query(WardenChowki.duty_date)
+            .order_by(db.desc(WardenChowki.duty_date))
+            .first()
+        )
+
+        # Check if a last assignment was found
+        if not latest_assignment:
+            return []  # Return an empty list if no assignments exist
+
+        last_assign_date = latest_assignment.duty_date
+
+        # Step 2: Get all assignments on that date with detailed info
+        assignments_on_last_date = (
+            db.session.query(WardenChowki, TrafficWarden, Chowki, Place, Shift)
+            .join(TrafficWarden, TrafficWarden.id == WardenChowki.warden_id)
+            .join(Chowki, Chowki.id == WardenChowki.chowki_id)
+            .join(Place, Place.id == Chowki.place_id)
+            .join(Shift, Shift.id == WardenChowki.shift_id)
+            .filter(WardenChowki.duty_date == last_assign_date)
+            .all()
+        )
+
+        # Step 3: Process results into a list of dictionaries
+        result_list = []
+        for assignment, warden, chowki, place, shift in assignments_on_last_date:
+            result_list.append({
+                'warden_name': warden.name,
+                'badge_number': warden.badge_number,
+                'chowki_name': chowki.name,
+                'chowki_place': place.name,
+                'shift_name': shift.shift_type,
+                'shift_time': shift.start_time.strftime('%H:%M')+" to "+ (shift.end_time.strftime('%H:%M')),  # Format the time as needed
+                'duty_date': assignment.duty_date.strftime('%Y-%m-%d'),  # Format the date as needed
+            })
+
+        return result_list
+
+    @staticmethod
+    def get_dutyroster_for_warden(badge_number):
+        # Step 1: Get the latest assignment date
+        latest_assignment = (
+            db.session.query(WardenChowki.duty_date)
+            .order_by(db.desc(WardenChowki.duty_date))
+            .first()
+        )
+
+        # Check if a last assignment was found
+        if not latest_assignment:
+            return []  # Return an empty list if no assignments exist
+
+        last_assign_date = latest_assignment.duty_date
+
+        # Step 2: Get all assignments on that date with detailed info
+        assignments_on_last_date = (
+            db.session.query(WardenChowki, TrafficWarden, Chowki, Place, Shift)
+            .join(TrafficWarden, TrafficWarden.id == WardenChowki.warden_id)
+            .join(Chowki, Chowki.id == WardenChowki.chowki_id)
+            .join(Place, Place.id == Chowki.place_id)
+            .join(Shift, Shift.id == WardenChowki.shift_id)
+            .filter(WardenChowki.duty_date == last_assign_date)
+            .filter(TrafficWarden.badge_number == badge_number)
+            .all()
+        )
+
+        # Step 3: Process results into a list of dictionaries
+        result_list = []
+        for assignment, warden, chowki, place, shift in assignments_on_last_date:
+            result_list.append({
+                'warden_name': warden.name,
+                'badge_number': warden.badge_number,
+                'chowki_name': chowki.name,
+                'chowki_place': place.name,
+                'shift_name': shift.shift_type,
+                'shift_time': shift.start_time.strftime('%H:%M') + " to " + (shift.end_time.strftime('%H:%M')),
+                # Format the time as needed
+                'duty_date': assignment.duty_date.strftime('%Y-%m-%d'),  # Format the date as needed
+            })
+
+        return result_list
+

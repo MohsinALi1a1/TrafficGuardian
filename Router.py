@@ -2,7 +2,7 @@ from datetime import datetime
 
 from Model.Configure import app
 from flask import  request ,jsonify
-from Controller import LocationController
+from Controller import LocationController, ChallanController
 from Controller import CameraChowkiController
 from Controller import WardenChowkiController
 
@@ -775,20 +775,315 @@ def update_warden_route():
         return jsonify({'error': str(exp)}), 500
 ########################################  WardenChowki  ############################################
 
-@app.route('/DutyRoaster', methods=['GET'])
-def get_dutyroster():
+@app.route('/wardenassignments', methods=['POST'])
+def warden_assignments():
     try:
-
         Duty=WardenChowkiController.create_duty_roster()
-        # if Duty:
-        #     return jsonify(Duty)
-        # else:
-        #     return jsonify({"Invalid": f"No traffic Warden exist from the location "}), 400
         return jsonify({"sucessfully":Duty})
     except Exception as exp:
         return jsonify({'error': str(exp)}), 500
 
 
+
+@app.route('/assignwarden', methods=['POST'])
+def assign_warden():
+    try:
+        data = request.get_json()
+        warden_id = data.get('wardenid')
+        chowki_id = data.get('chowkiid')
+        shift_id=data.get('shiftid')
+        if not warden_id or not chowki_id or not shift_id:
+            return jsonify({"error": "Warden_id, Chowki_id & Shift_id are required."}), 400
+
+        # Add the new warden
+        new_assignment = WardenChowkiController.assignwarden(warden_id, chowki_id, shift_id)
+        return jsonify(new_assignment), 201
+    except Exception as exp:
+        return jsonify({'error': str(exp)}), 500
+
+
+@app.route('/getassignjobs', methods=['GET'])
+def get_all_dutyroster():
+    try:
+
+        dutyroster_list = WardenChowkiController.get_all_assignments_on_last_assign_date()
+        print(dutyroster_list)
+        return jsonify(dutyroster_list)
+    except Exception as exp:
+        return jsonify({'error': str(exp)}), 500
+
+
+@app.route('/getassignjobofwarden', methods=['GET'])
+def get_all_dutyroster_of_warden():
+    try:
+        data = request.get_json()
+        badge_number = data.get('badgenumber')
+        dutyroster_list = WardenChowkiController.get_dutyroster_for_warden(badge_number)
+        print(dutyroster_list)
+        return jsonify(dutyroster_list)
+    except Exception as exp:
+        return jsonify({'error': str(exp)}), 500
+
+
+
+########################################  Vehicle  ############################################
+@app.route('/vehicle', methods=['GET'])
+def get_all_vehicles():
+    try:
+        vehicle_list = ChallanController.get_all_vehicles()
+        return jsonify(vehicle_list)
+    except Exception as exp:
+        return jsonify({'error': str(exp)}), 500
+
+
+@app.route('/vehiclebyid', methods=['GET'])
+def get_vehicle_by_id():
+    try:
+        data = request.get_json()
+        vehicle_id = data.get('id')
+        if not vehicle_id:
+            return jsonify({"error": "Vehicle id is required"}), 400
+        vehicle = ChallanController.get_vehicle_by_id(vehicle_id)
+        return jsonify(vehicle)
+    except Exception as exp:
+        return jsonify({'error': str(exp)}), 500
+
+
+@app.route('/vehiclebylicenseplate', methods=['GET'])
+def get_vehicle_by_licenseplate():
+    try:
+        data = request.get_json()
+        licenseplate = data.get('licenseplate')
+        vehicle = ChallanController.get_vehicle_by_licenseplate(licenseplate)
+        return jsonify(vehicle)
+    except Exception as exp:
+        return jsonify({'error': str(exp)}), 500
+
+
+@app.route('/addvehicle', methods=['POST'])
+def add_vehicle():
+    try:
+        data = request.get_json()
+        licenseplate = data.get('licenseplate')
+        vehicletype = data.get('vehicletype')
+
+        if not licenseplate or not vehicletype:
+            return jsonify({"error": "License plate and vehicle type are required"}), 400
+
+        vehicle = ChallanController.add_vehicle(licenseplate, vehicletype)
+        return jsonify(vehicle), 201
+    except Exception as exp:
+        return jsonify({'error': str(exp)}), 500
+
+
+@app.route('/deletevehicle', methods=['DELETE'])
+def delete_vehicle_by_licenseplate():
+    try:
+        data = request.get_json()
+        licenseplate = data.get('licenseplate')
+        if not licenseplate:
+            return jsonify({"error": "License plate is required"}), 400
+
+        message = ChallanController.delete_vehicle(licenseplate)
+        return jsonify(message)
+    except Exception as exp:
+        return jsonify({'error': str(exp)}), 500
+
+
+@app.route('/updatevehicle', methods=['PUT'])
+def update_vehicle():
+    try:
+        data = request.get_json()
+        licenseplate = data.get('licenseplate')
+        new_licenseplate = data.get('new_licenseplate')
+
+
+        if not licenseplate or not new_licenseplate :
+            return jsonify({"error": "Current license plate and at least one new value are required"}), 400
+
+        message = ChallanController.update_vehicle(licenseplate, new_licenseplate)
+        return jsonify(message)
+    except Exception as exp:
+        return jsonify({'error': str(exp)}), 500
+
+########################################  User  ############################################
+
+
+@app.route('/user', methods=['GET'])
+def get_all_users():
+    try:
+        user_list = ChallanController.get_all_users()
+        return jsonify(user_list)
+    except Exception as exp:
+        return jsonify({'error': str(exp)}), 500
+
+
+@app.route('/userbyid', methods=['GET'])
+def get_user_by_id():
+    try:
+        data = request.get_json()
+        user_id = data.get('id')
+        if not user_id:
+            return jsonify({"error": "User id is required"}), 400
+        user = ChallanController.get_user_by_id(user_id)
+        return jsonify(user)
+    except Exception as exp:
+        return jsonify({'error': str(exp)}), 500
+
+
+@app.route('/userbycnic', methods=['GET'])
+def get_user_by_cnic():
+    try:
+        data = request.get_json()
+        cnic = data.get('cnic')
+        user = ChallanController.get_user_by_cnic(cnic)
+        return jsonify(user)
+    except Exception as exp:
+        return jsonify({'error': str(exp)}), 500
+
+
+@app.route('/adduser', methods=['POST'])
+def add_user():
+    try:
+        data = request.get_json()
+        name = data.get('name')
+        cnic = data.get('cnic')
+        mobilenumber = data.get('mobilenumber')
+        email = data.get('email')
+
+        if not name or not cnic or not mobilenumber:
+            return jsonify({"error": "Name, CNIC, and mobile number are required"}), 400
+
+        user = ChallanController.add_user(name, cnic, mobilenumber, email)
+        return jsonify(user), 201
+    except Exception as exp:
+        return jsonify({'error': str(exp)}), 500
+
+
+@app.route('/deleteuser', methods=['DELETE'])
+def delete_user_by_cnic():
+    try:
+        data = request.get_json()
+        cnic = data.get('cnic')
+        if not cnic:
+            return jsonify({"error": "CNIC is required"}), 400
+
+        message = ChallanController.delete_user(cnic)
+        return jsonify(message)
+    except Exception as exp:
+        return jsonify({'error': str(exp)}), 500
+
+
+@app.route('/updateuser', methods=['PUT'])
+def update_user():
+    try:
+        data = request.get_json()
+        cnic = data.get('cnic')
+        new_name = data.get('new_name')
+        new_mobilenumber = data.get('new_mobilenumber')
+        new_email = data.get('new_email')
+
+        if not cnic:
+            return jsonify({"error": "CNIC is required"}), 400
+
+        message = ChallanController.update_user(cnic, new_name, new_mobilenumber, new_email)
+        return jsonify(message)
+    except Exception as exp:
+        return jsonify({'error': str(exp)}), 500
+
+    ########################################  Violations  ############################################
+# Route to get all violations with fines
+@app.route('/violations', methods=['GET'])
+def get_all_violations():
+    try:
+        violations = ChallanController.get_all_violations()
+        return jsonify(violations)
+    except Exception as exp:
+        return jsonify({'error': str(exp)}), 500
+
+
+@app.route('/violationsbyid', methods=['GET'])
+def get_violation_by_id():
+    try:
+        data = request.get_json()
+        violation_id = data.get('violation_id')
+
+        if violation_id is None:
+            return jsonify({"error": "violation_id is required"}), 400
+
+        violation = ChallanController.get_violation_by_id(violation_id)
+        return jsonify(violation)
+    except Exception as exp:
+        return jsonify({'error': str(exp)}), 500
+
+
+# Route to add a new violation
+@app.route('/violation', methods=['POST'])
+def add_violation():
+    try:
+        data = request.get_json()
+        name = data.get('name')
+        description = data.get('description')
+
+        if not name:
+            return jsonify({"error": "Violation name is required"}), 400
+
+        result = ChallanController.add_violation(name, description)
+        return jsonify(result), 201
+    except Exception as exp:
+        return jsonify({'error': str(exp)}), 500
+
+# Route to delete a violation by ID
+@app.route('/deleteviolation', methods=['DELETE'])
+def delete_violation():
+    try:
+        data = request.get_json()
+        violation_name = data.get('violation_name')
+        result = ChallanController.delete_violation(violation_name)
+        return jsonify(result)
+    except Exception as exp:
+        return jsonify({'error': str(exp)}), 500
+
+# Route to update a violation
+@app.route('/updateviolation', methods=['PUT'])
+def update_violation():
+    try:
+        data = request.get_json()
+        violation_id=data.get('violation_id')
+        new_name = data.get('new_name')
+        new_description = data.get('new_description')
+
+        result = ChallanController.update_violation(violation_id, new_name, new_description)
+        return jsonify(result)
+    except Exception as exp:
+        return jsonify({'error': str(exp)}), 500
+
+    ########################################  ViolationsFine  ############################################
+# Route to add a fine to a violation
+@app.route('/violationfine', methods=['POST'])
+def add_violation_fine():
+    try:
+        data = request.get_json()
+        violation_name=data.get('violation_name')
+        created_date = datetime.today().strftime('%Y-%m-%d')
+        fine = data.get('fine')
+
+        if  not fine  or not violation_name:
+            return jsonify({"error": "Violation_id and fine amount are required"}), 400
+
+        result = ChallanController.add_violation_fine(violation_name, created_date, fine)
+        return jsonify(result), 201
+    except Exception as exp:
+        return jsonify({'error': str(exp)}), 500
+
+# Route to delete a fine
+@app.route('/fine/<int:fine_id>', methods=['DELETE'])
+def delete_violation_fine(fine_id):
+    try:
+        result = ChallanController.delete_violation_fine(fine_id)
+        return jsonify(result)
+    except Exception as exp:
+        return jsonify({'error': str(exp)}), 500
 
 #########################################################################################################################################
 
