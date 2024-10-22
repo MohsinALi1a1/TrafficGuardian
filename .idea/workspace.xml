@@ -4,11 +4,17 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="6099f9b0-72b9-42ed-926f-93f4c7ea9004" name="Changes" comment="16-10-2024(Duty Roster)">
+    <list default="true" id="6099f9b0-72b9-42ed-926f-93f4c7ea9004" name="Changes" comment="16-10-2024(Duty Roster ,Challan Controller)">
+      <change afterPath="$PROJECT_DIR$/Model/ChallanViolations.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Model/ViolationDetails.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Controller/ChallanController.py" beforeDir="false" afterPath="$PROJECT_DIR$/Controller/ChallanController.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Controller/WardenChowkiController.py" beforeDir="false" afterPath="$PROJECT_DIR$/Controller/WardenChowkiController.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Model/Challan.py" beforeDir="false" afterPath="$PROJECT_DIR$/Model/Challan.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Model/TrafficWarden.py" beforeDir="false" afterPath="$PROJECT_DIR$/Model/TrafficWarden.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Model/User.py" beforeDir="false" afterPath="$PROJECT_DIR$/Model/User.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Model/Violation.py" beforeDir="false" afterPath="$PROJECT_DIR$/Model/Violation.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Model/ViolationHistory.py" beforeDir="false" afterPath="$PROJECT_DIR$/Model/ViolationHistory.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Model/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/Model/__init__.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Router.py" beforeDir="false" afterPath="$PROJECT_DIR$/Router.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -161,7 +167,15 @@
       <option name="project" value="LOCAL" />
       <updated>1729072838969</updated>
     </task>
-    <option name="localTasksCounter" value="4" />
+    <task id="LOCAL-00004" summary="16-10-2024(Duty Roster ,Challan Controller)">
+      <option name="closed" value="true" />
+      <created>1729094277114</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1729094277114</updated>
+    </task>
+    <option name="localTasksCounter" value="5" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -179,7 +193,8 @@
     <MESSAGE value="Initial Commit" />
     <MESSAGE value="15-10-2024(Traffic Warden)" />
     <MESSAGE value="16-10-2024(Duty Roster)" />
-    <option name="LAST_COMMIT_MESSAGE" value="16-10-2024(Duty Roster)" />
+    <MESSAGE value="16-10-2024(Duty Roster ,Challan Controller)" />
+    <option name="LAST_COMMIT_MESSAGE" value="16-10-2024(Duty Roster ,Challan Controller)" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>

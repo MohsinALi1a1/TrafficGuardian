@@ -14,4 +14,5 @@ class Violation(db.Model):
     description = db.Column(db.Text, nullable=True)
 # Back ref
     violation_fines=db.relationship("ViolationFine",back_populates="violation")
-    violation_histories = db.relationship("ViolationHistory", back_populates="violation")
+    violation_details = db.relationship("ViolationDetails", back_populates="violation")
+    challan_violations = db.relationship('ChallanViolations', back_populates='violations')

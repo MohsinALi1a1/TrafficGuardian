@@ -31,3 +31,4 @@ class TrafficWarden(db.Model):
 
     #BackRelationship
     warden_chowkis = db.relationship("WardenChowki", back_populates="warden")
+    challans = db.relationship('Challan', back_populates='warden')

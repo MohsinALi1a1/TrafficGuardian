@@ -1,5 +1,6 @@
 from datetime import datetime
 
+
 from Model.Configure import app
 from flask import  request ,jsonify
 from Controller import LocationController, ChallanController
@@ -1082,6 +1083,143 @@ def delete_violation_fine(fine_id):
     try:
         result = ChallanController.delete_violation_fine(fine_id)
         return jsonify(result)
+    except Exception as exp:
+        return jsonify({'error': str(exp)}), 500
+
+########################################  ViolationsHistory & Its Details ############################################
+@app.route('/addviolationsrecord', methods=['POST'])
+def create_violation():
+    try:
+        data = request.json
+        vehicle_id = data.get('vehicle_id')
+        date = data.get('date')
+        location = data.get('location')
+        status = data.get('status', 'Pending')  # Default to 'Pending'
+        imagepath = data.get('imagepath')
+        camera_id = data.get('camera_id')
+        violation_ids = data.get('violation_ids')
+
+        if not all([vehicle_id, date, location, camera_id, violation_ids]):
+            return jsonify({"error": "Missing required fields"}), 400
+
+        success = ChallanController.add_violation_history_and_details(vehicle_id, date, location, status, imagepath, camera_id, violation_ids)
+
+        if success:
+            return jsonify(success)
+
+    except Exception as exp:
+        return jsonify({'error': str(exp)}), 500
+
+
+@app.route('/getviolationsrecord', methods=['GET'])
+def get_violation_records():
+    try:
+        data = request.json
+        vehicle_id = data.get('vehicle_id')
+        date = data.get('date')
+        camera_id = data.get('camera_id')
+        result = ChallanController.get_violation_history_with_details(vehicle_id, date, camera_id)
+        return jsonify(result)
+    except Exception as exp:
+        return jsonify({'error': str(exp)}), 500
+
+@app.route('/updateviolationsrecord', methods=['PUT'])
+def update_violation_records():
+    try:
+        data = request.json
+        vehicle_id = data.get('vehicle_id')
+        date = data.get('date')
+        camera_id = data.get('camera_id')
+        updates = data.get('updates') #get dictionary
+
+        result = ChallanController.update_violation_history(vehicle_id, date, camera_id, updates)
+        return jsonify(result)
+    except Exception as exp:
+        return jsonify({'error': str(exp)}), 500
+
+@app.route('/deleteviolationsrecord', methods=['DELETE'])
+def delete_violation_records():
+    try:
+        data = request.json
+        vehicle_id = data.get('vehicle_id')
+        date = data.get('date')
+        camera_id = data.get('camera_id')
+        print(camera_id)
+
+        result = ChallanController.delete_violation_history(vehicle_id, date, camera_id)
+        return jsonify(result)
+    except Exception as exp:
+        return jsonify({'error': str(exp)}), 500
+
+
+
+
+######################################################Challan & Challan Details#############################################################################
+@app.route('/addchallanrecord', methods=['POST'])
+def create_challan():
+    try:
+        data = request.json
+        violation_history_id = data.get('violation_history_id')
+        violation_ids = data.get('violation_ids') #List
+        user_id = data.get('user_id')
+        warden_id = data.get('warden_id')
+        fine_amount = data.get('fine_amount')
+        status = data.get('status')
+
+        if not all([violation_history_id, violation_ids, user_id, warden_id, fine_amount, status]):
+            return jsonify({"error": "Missing required fields"}), 400
+
+
+        date = datetime.utcnow()  # Assuming you want to use the current UTC time for the date
+
+        success, challan_id = ChallanController.add_challan_history_and_details(
+            date, status, violation_ids, violation_history_id, user_id, warden_id, fine_amount
+        )
+
+        if success:
+            return jsonify({"success": True, "challan_id": challan_id}), 201
+        else:
+            return jsonify({"error": "Failed to add challan record"}), 500
+
+    except Exception as exp:
+        return jsonify({'error': str(exp)}), 500
+
+
+@app.route('/getchallans', methods=['GET'])
+def retrieve_challans():
+    try:
+        data = request.json
+        challan_id = data.get('challan_id')
+        user_id = data.get('user_id')
+        warden_id = data.get('warden_id')
+
+        success, result = ChallanController.get_challans(challan_id, user_id, warden_id)
+
+        if success:
+            return jsonify(result), 200
+        else:
+            return jsonify({"error": result}), 404 if challan_id else 200
+    except Exception as exp:
+        return jsonify({'error': str(exp)}), 500
+
+
+@app.route('/updatechallanstatus', methods=['PUT'])
+def update_challan():
+    try:
+        data = request.json
+        challan_id = data.get('challan_id')
+        new_status = data.get('new_status')
+
+        if not challan_id or not new_status:
+            return jsonify({"error": "Missing required fields"}), 400
+
+        success, result = ChallanController.update_challan_status(challan_id, new_status)
+
+        if success:
+            return jsonify(result), 200
+        else:
+            return jsonify({"error": result}), 404  # Not found if challan_id was invalid
+
     except Exception as exp:
         return jsonify({'error': str(exp)}), 500
 

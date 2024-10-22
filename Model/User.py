@@ -16,3 +16,5 @@ class User(db.Model):
     cnic = db.Column(db.String(20), nullable=False, unique=True)
     mobilenumber = db.Column(db.String(15), nullable=False)
     email = db.Column(db.String(255))
+
+    challans = db.relationship('Challan', back_populates='user')
