@@ -14,7 +14,6 @@
 
 from Model.Configure import  db
 
-
 class Challan(db.Model):
     __tablename__ = 'Challan'
 

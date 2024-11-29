@@ -3,7 +3,6 @@ from Controller import LocationController, CameraChowkiController
 import random
 from datetime import datetime
 
-
 class WardenChowkiController:
 
     ##################################################Shift#########################################################################

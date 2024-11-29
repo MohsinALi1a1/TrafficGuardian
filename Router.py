@@ -1,12 +1,13 @@
+import io
+import os
+from PIL import Image
 from datetime import datetime
-
-
 from Model.Configure import app
 from flask import  request ,jsonify
 from Controller import LocationController, ChallanController
 from Controller import CameraChowkiController
 from Controller import WardenChowkiController
-
+from Controller import yolov8
 
 
 ########################################  City  ############################################
@@ -338,13 +339,14 @@ def add_camera():
         data = request.get_json()
         name = data.get('name')
         direction_name = data.get('directionname')
-        type=data.get('type')
+        cam_type=data.get('type')
 
-        if not name or not direction_name or not type:
+
+        if not name or not direction_name or not cam_type:
             return jsonify({"error": " Camera,Direction name & Camera Type  is required"}), 400
 
         # Add the new Direction
-        camera = CameraChowkiController.add_camera(name,direction_name,type)
+        camera = CameraChowkiController.add_camera(name,direction_name,cam_type)
         return jsonify(camera), 201
     except Exception as exp:
         return jsonify({'error': str(exp)}), 500
@@ -639,7 +641,7 @@ def add_shift():
 
         return jsonify(shift_response), 201
     except ValueError as ve:
-        return jsonify({'error': 'Invalid time format. Use HH:MM:SS.'}), 400
+        return jsonify({'error': f'{ve}\nInvalid time format. Use HH:MM:SS. '}), 400
     except Exception as exp:
         return jsonify({'error': str(exp)}), 500
 
@@ -779,8 +781,8 @@ def update_warden_route():
 @app.route('/wardenassignments', methods=['POST'])
 def warden_assignments():
     try:
-        Duty=WardenChowkiController.create_duty_roster()
-        return jsonify({"sucessfully":Duty})
+        duty=WardenChowkiController.create_duty_roster()
+        return jsonify({"sucessfully":duty})
     except Exception as exp:
         return jsonify({'error': str(exp)}), 500
 
@@ -1170,7 +1172,7 @@ def create_challan():
             return jsonify({"error": "Missing required fields"}), 400
 
 
-        date = datetime.utcnow()  # Assuming you want to use the current UTC time for the date
+        date =  datetime.now()  # Assuming you want to use the current UTC time for the date
 
         success, challan_id = ChallanController.add_challan_history_and_details(
             date, status, violation_ids, violation_history_id, user_id, warden_id, fine_amount
@@ -1218,12 +1220,49 @@ def update_challan():
         if success:
             return jsonify(result), 200
         else:
-            return jsonify({"error": result}), 404  # Not found if challan_id was invalid
+            return jsonify({"error": result}), 404
 
     except Exception as exp:
         return jsonify({'error': str(exp)}), 500
 
 #########################################################################################################################################
+
+# Specify the folder to save uploaded images
+UPLOAD_FOLDER = 'uploads'
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
+# Ensure the upload folder exists
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+
+@app.route('/upload-image', methods=['POST'])
+def upload_image():
+    try:
+        # Check if the request contains a file
+        if 'image' not in request.files:
+            return "No image file provided", 400
+
+        file = request.files['image']
+
+        # Read and open the image using PIL
+        if file.filename != '':
+            image = Image.open(io.BytesIO(file.read()))
+
+            # Save the image in the upload folder
+            file_path = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
+            image.save(file_path)
+            model_path = r'C:\Users\92306\PycharmProjects\TrafficGuardian\yolov8s.pt'
+            preprocessed_image=yolov8.preprocess_image(image)
+            print("Preprocessed image shape:", preprocessed_image.shape)
+            yolov8.detect_violations_from_Image(file_path, model_path)  # Use the fine-tuned model for detection
+
+            return f"Image uploaded and processed successfully: {file_path}", 200
+        else:
+            return "File has no filename", 400
+
+    except Exception as e:
+        # Handle exceptions that may occur
+        return f"An error occurred: {str(e)}", 500
 
 
 

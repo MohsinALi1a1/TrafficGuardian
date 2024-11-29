@@ -4,17 +4,26 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="6099f9b0-72b9-42ed-926f-93f4c7ea9004" name="Changes" comment="16-10-2024(Duty Roster ,Challan Controller)">
-      <change afterPath="$PROJECT_DIR$/Model/ChallanViolations.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Model/ViolationDetails.py" afterDir="false" />
+    <list default="true" id="6099f9b0-72b9-42ed-926f-93f4c7ea9004" name="Changes" comment="22-10-2024(Challan Controller)">
+      <change afterPath="$PROJECT_DIR$/Controller/YoloController.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/data.yaml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/runs/detect/train2/args.yaml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/runs/detect/train2/labels.jpg" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/runs/detect/train2/labels_correlogram.jpg" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/runs/detect/train2/train_batch0.jpg" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/runs/detect/train2/train_batch1.jpg" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/runs/detect/train2/train_batch2.jpg" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/runs/detect/train3/args.yaml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/runs/detect/train3/labels.jpg" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/runs/detect/train3/labels_correlogram.jpg" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/runs/detect/train3/train_batch0.jpg" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/runs/detect/train3/train_batch1.jpg" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/runs/detect/train3/train_batch2.jpg" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Controller/ChallanController.py" beforeDir="false" afterPath="$PROJECT_DIR$/Controller/ChallanController.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Controller/WardenChowkiController.py" beforeDir="false" afterPath="$PROJECT_DIR$/Controller/WardenChowkiController.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Controller/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/Controller/__init__.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Model/Challan.py" beforeDir="false" afterPath="$PROJECT_DIR$/Model/Challan.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Model/TrafficWarden.py" beforeDir="false" afterPath="$PROJECT_DIR$/Model/TrafficWarden.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Model/User.py" beforeDir="false" afterPath="$PROJECT_DIR$/Model/User.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Model/Violation.py" beforeDir="false" afterPath="$PROJECT_DIR$/Model/Violation.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Model/ViolationHistory.py" beforeDir="false" afterPath="$PROJECT_DIR$/Model/ViolationHistory.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Model/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/Model/__init__.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Router.py" beforeDir="false" afterPath="$PROJECT_DIR$/Router.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -49,6 +58,10 @@
     &quot;accountId&quot;: &quot;0fc19df7-be3b-4f10-9988-fc3943e7f7a6&quot;
   }
 }</component>
+  <component name="HighlightingSettingsPerFile">
+    <setting file="file://$PROJECT_DIR$/Controller/CameraChowkiController.py" root0="SKIP_INSPECTION" />
+    <setting file="file://$PROJECT_DIR$/Controller/YoloController.py" root0="SKIP_INSPECTION" />
+  </component>
   <component name="ProblemsViewState">
     <option name="selectedTabId" value="CurrentFile" />
   </component>
@@ -67,15 +80,28 @@
   &quot;keyToString&quot;: {
     &quot;Python.Chowki.executor&quot;: &quot;Run&quot;,
     &quot;Python.Configure.executor&quot;: &quot;Run&quot;,
+    &quot;Python.Dumy.executor&quot;: &quot;Run&quot;,
     &quot;Python.LocationController.executor&quot;: &quot;Run&quot;,
     &quot;Python.Router.executor&quot;: &quot;Run&quot;,
+    &quot;Python.YoloController.executor&quot;: &quot;Run&quot;,
     &quot;Python.main.executor&quot;: &quot;Run&quot;,
+    &quot;Python.train_and_detect.executor&quot;: &quot;Run&quot;,
     &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
     &quot;git-widget-placeholder&quot;: &quot;TrafficGuardian&quot;,
     &quot;ignore.virus.scanning.warn.message&quot;: &quot;true&quot;,
+    &quot;last_opened_file_path&quot;: &quot;C:/Users/92306/PycharmProjects/FlowerClassification&quot;,
     &quot;settings.editor.selected.configurable&quot;: &quot;com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable&quot;
   }
 }</component>
+  <component name="RecentsManager">
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="C:\Users\92306\PycharmProjects\TrafficGuardian\runs\detect" />
+      <recent name="C:\Users\92306\PycharmProjects\TrafficGuardian\runs" />
+      <recent name="C:\Users\92306\PycharmProjects\TrafficGuardian" />
+      <recent name="C:\Users\92306\PycharmProjects\TrafficGuardian\Dataset\Images\Train" />
+      <recent name="C:\Users\92306\PycharmProjects\TrafficGuardian\Dataset\Images" />
+    </key>
+  </component>
   <component name="RunManager" selected="Python.Router">
     <configuration name="Router" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="TrafficGuardian" />
@@ -91,6 +117,28 @@
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <option name="SCRIPT_NAME" value="$PROJECT_DIR$/Router.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="YoloController" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="TrafficGuardian" />
+      <option name="ENV_FILES" value="" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/Controller" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/Controller/YoloController.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
@@ -124,13 +172,14 @@
     <recent_temporary>
       <list>
         <item itemvalue="Python.Router" />
+        <item itemvalue="Python.YoloController" />
       </list>
     </recent_temporary>
   </component>
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
-        <option value="bundled-python-sdk-0e3be3396995-c546a90a8094-com.jetbrains.pycharm.community.sharedIndexes.bundled-PC-242.23339.19" />
+        <option value="bundled-python-sdk-d7ad00fb9fc3-c546a90a8094-com.jetbrains.pycharm.community.sharedIndexes.bundled-PC-242.23726.102" />
       </set>
     </attachedChunks>
   </component>
@@ -175,7 +224,15 @@
       <option name="project" value="LOCAL" />
       <updated>1729094277114</updated>
     </task>
-    <option name="localTasksCounter" value="5" />
+    <task id="LOCAL-00005" summary="22-10-2024(Challan Controller)">
+      <option name="closed" value="true" />
+      <created>1729611983016</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1729611983016</updated>
+    </task>
+    <option name="localTasksCounter" value="6" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -194,17 +251,7 @@
     <MESSAGE value="15-10-2024(Traffic Warden)" />
     <MESSAGE value="16-10-2024(Duty Roster)" />
     <MESSAGE value="16-10-2024(Duty Roster ,Challan Controller)" />
-    <option name="LAST_COMMIT_MESSAGE" value="16-10-2024(Duty Roster ,Challan Controller)" />
-  </component>
-  <component name="XDebuggerManager">
-    <breakpoint-manager>
-      <breakpoints>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/Model/CameraChowki.py</url>
-          <line>20</line>
-          <option name="timeStamp" value="1" />
-        </line-breakpoint>
-      </breakpoints>
-    </breakpoint-manager>
+    <MESSAGE value="22-10-2024(Challan Controller)" />
+    <option name="LAST_COMMIT_MESSAGE" value="22-10-2024(Challan Controller)" />
   </component>
 </project>
