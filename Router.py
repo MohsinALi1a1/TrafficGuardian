@@ -17,9 +17,12 @@ def get_all_cities():
     try:
         city_list = LocationController.get_all_City()
         print(city_list)
-        return jsonify(city_list)
+        return jsonify(city_list),200
     except Exception as exp:
         return jsonify({'error': str(exp)}), 500
+
+
+
 
 
 @app.route('/citybyid', methods=['GET'])
@@ -41,7 +44,7 @@ def get_city_by_name():
     try:
         city_name = request.args.get('name')
         city = LocationController.get_city_by_name(city_name)
-        return jsonify(city)
+        return jsonify(city),200
     except Exception as exp:
         return jsonify({'error': str(exp)}), 500
 
@@ -1061,7 +1064,7 @@ def update_violation():
     except Exception as exp:
         return jsonify({'error': str(exp)}), 500
 
-    ########################################  ViolationsFine  ############################################
+########################################  ViolationsFine  ############################################
 # Route to add a fine to a violation
 @app.route('/violationfine', methods=['POST'])
 def add_violation_fine():
@@ -1234,7 +1237,6 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 # Ensure the upload folder exists
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
-
 @app.route('/upload-image', methods=['POST'])
 def upload_image():
     try:
@@ -1254,17 +1256,20 @@ def upload_image():
             model_path = r'C:\Users\92306\PycharmProjects\TrafficGuardian\yolov8s.pt'
             preprocessed_image=yolov8.preprocess_image(image)
             print("Preprocessed image shape:", preprocessed_image.shape)
-            yolov8.detect_violations_from_Image(file_path, model_path)  # Use the fine-tuned model for detection
+            violations_and_plates = yolov8.detect_violations_from_Image(file_path, model_path)
 
-            return f"Image uploaded and processed successfully: {file_path}", 200
+            # Return the result in JSON format
+            return jsonify({
+                'message': 'Image uploaded and processed successfully',
+                'violations_and_plates': violations_and_plates
+            }), 200
         else:
-            return "File has no filename", 400
+            return jsonify({"message": "File has no filename"}), 400
 
     except Exception as e:
         # Handle exceptions that may occur
-        return f"An error occurred: {str(e)}", 500
-
+        return jsonify({"message": f"An error occurred: {str(e)}"}), 500
 
 
 if __name__ == "__main__":
-    app.run()
+    app.run(host='0.0.0.0', port=4321, debug=True)

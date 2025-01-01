@@ -1,7 +1,5 @@
 from Model import City,Place,Direction ,db
 
-
-
 class LocationController:
 
     @staticmethod
@@ -161,7 +159,7 @@ class LocationController:
 
     @staticmethod
     def get_direction_by_name(direction_name):
-        directions = db.session.query(Direction).filter(Direction.name == direction_name)
+        directions = db.session.query(Direction).filter(Direction.name == direction_name).all()
         if directions:
             return [{'id':direction.id , 'name':direction.name , 'place_id':direction.place_id} for direction in directions]
         else:
