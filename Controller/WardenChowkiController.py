@@ -13,19 +13,19 @@ class WardenChowkiController:
 
     @staticmethod
     def get_shift_by_id(ID):
-        shift = Shift.query.get_or_404(ID)
+        shift = Shift.query.get(ID)
         if shift:
-            return{'id': shift.id, 'name': shift.shift_type,'start_time' : shift.start_time.strftime('%H:%M:%S') ,'end_time': shift.end_time.strftime('%H:%M:%S')}
+            return{'id': shift.id, 'name': shift.shift_type,'start_time' : shift.start_time.strftime('%H:%M:%S') ,'end_time': shift.end_time.strftime('%H:%M:%S')},200
         else:
-            return {"error": "Shift not found"}
+            return {"error": "Shift not found"},404
 
     @staticmethod
     def get_shift_by_name(shift_name):
         shift = db.session.query(Shift).filter(Shift.shift_type == shift_name).first()
         if shift:
-            return {'id': shift.id, 'name': shift.shift_type,'start_time' : shift.start_time.strftime('%H:%M:%S') ,'end_time': shift.end_time.strftime('%H:%M:%S')}
+            return {'id': shift.id, 'name': shift.shift_type,'start_time' : shift.start_time.strftime('%H:%M:%S') ,'end_time': shift.end_time.strftime('%H:%M:%S')},200
         else:
-            return {"error": "Shift not found"}
+            return {"error": "Shift not found"},404
 
     @staticmethod
     def add_shift(shift_type, start_time, end_time):
@@ -71,18 +71,21 @@ class WardenChowkiController:
     @staticmethod
     def get_all_warden():
         wardens = TrafficWarden.query.all()
+
         return [{'id': warden.id, 'name': warden.name, 'badge_number': warden.badge_number,
-                 'address': warden.address ,'cnic':warden.cnic ,'email':warden.email ,'mobile_number':warden.mobile_number ,'city_Name':LocationController.get_city_name_by_id(warden.city_id) }for warden in wardens]
+                 'address': warden.address ,'cnic':warden.cnic ,'email':warden.email ,'mobile_number':warden.mobile_number ,'city_Name':LocationController.get_city_name_by_id(warden.city_id)[0] }for warden in wardens],200
 
     @staticmethod
     def get_all_warden_city(city_name):
-        city=LocationController.get_city_by_name(city_name)
+        city,code=LocationController.get_city_by_name(city_name)
+        if not city or code !=200:
+            return {'error':'City not found'},409
 
         wardens = db.session.query(TrafficWarden).filter(TrafficWarden.city_id == city['id']).all()
         return [{'id': warden.id, 'name': warden.name, 'badge_number': warden.badge_number,
                  'address': warden.address, 'cnic': warden.cnic, 'email': warden.email,
                  'mobile_number': warden.mobile_number,
-                 'city_Name': LocationController.get_city_name_by_id(warden.city_id)} for warden in wardens]
+                 'city_Name': LocationController.get_city_name_by_id(warden.city_id)[0]} for warden in wardens],200
 
     @staticmethod
     def get_warden_by_cnic(warden_cnic):
@@ -91,9 +94,9 @@ class WardenChowkiController:
             return {'id': warden.id, 'name': warden.name, 'badge_number': warden.badge_number,
                  'address': warden.address, 'cnic': warden.cnic, 'email': warden.email,
                  'mobile_number': warden.mobile_number,
-                 'city_Name': LocationController.get_city_name_by_id(warden.city_id)}
+                 'city_Name': LocationController.get_city_name_by_id(warden.city_id)[0]},200
         else:
-            return {"error": "Warden not found"}
+            return {"error": "Warden not found"},404
 
     @staticmethod
     def add_warden(name, badge_number, address, cnic, email, mobile_number, city_name):
@@ -211,8 +214,8 @@ class WardenChowkiController:
 
         for city in cities:
             print(city.name)
-            wardens = WardenChowkiController.get_all_warden_city(city.name)
-            chowkis = CameraChowkiController.get_all_Chowki_bycity(city.name)
+            wardens,code = WardenChowkiController.get_all_warden_city(city.name)
+            chowkis ,code= CameraChowkiController.get_all_Chowki_bycity(city.name)
             shifts = WardenChowkiController.get_all_Shift()
 
             total_wardens = len(wardens)
@@ -220,14 +223,17 @@ class WardenChowkiController:
             total_shifts = len(shifts)
             print("Numbers of Wardens = ",total_wardens ,"Numbers of Chowki = ", total_chowkis ,"Numbers of Shifts = ",total_shifts)
             if not chowkis or not wardens:
-
                 continue
+            wardenchowkis=db.session.query(WardenChowki).all()
+            for warchowki in wardenchowkis:
+                db.session.delete(warchowki)
+            db.session.commit()
             available_wardens = wardens.copy()
             # Calculate the warden requirement per chowki
             wardens_per_chowki = WardenChowkiController.calculate_wardens_requirement(total_wardens, total_chowkis,
                                                                                       total_shifts)
-            print("Waden per Chowki  = ",wardens_per_chowki)
-            # Initialize the schedule
+            print("Warden per Chowki  = ",wardens_per_chowki)
+
 
             for chowki in chowkis:
 
@@ -240,7 +246,7 @@ class WardenChowkiController:
                 schedule[chowki_name] = {"shifts": [],"chowkicity":chowki_city,"chowkiplace":chowki_place ,"chowkiid":id}
 
                 for shift_index in range(1, total_shifts + 1):
-                    # Your code logic here
+
                     random.shuffle(available_wardens)
 
                     if len(available_wardens) < wardens_per_chowki:
@@ -252,7 +258,7 @@ class WardenChowkiController:
                         "assigned_wardens": assigned_wardens
                     })
 
-                    # Remove assigned wardens from available pool
+
                     available_wardens = [warden for warden in available_wardens if warden not in assigned_wardens]
 
 
@@ -280,23 +286,23 @@ class WardenChowkiController:
                         new_assignment = WardenChowkiController.assignwarden(war['id'], chowki_data["chowkiid"], shift['shift_index'])
             print()
 
-        return dutyroster
+        return dutyroster,200
 
     @staticmethod
     def assignwarden(warden_id, chowki_id, shift_id, duty_date=datetime.today().strftime('%Y-%m-%d')):
-        # Check for required parameters
-        if not warden_id or not chowki_id or not shift_id:
-            return {"error": "warden_id, chowki_id, and shift_id are required."}, 400  # Use 400 for bad request
 
-        # Create a new assignment
+        if not warden_id or not chowki_id or not shift_id:
+            return {"error": "warden_id, chowki_id, and shift_id are required."}, 400
+
+
         new_assignment = WardenChowki(warden_id=warden_id, chowki_id=chowki_id, shift_id=shift_id, duty_date=duty_date)
 
         try:
             db.session.add(new_assignment)
             db.session.commit()
         except Exception as e:
-            db.session.rollback()  # Roll back in case of an error
-            return {"error": f"An error occurred while assigning the job: {str(e)}"}, 500  # Use 500 for server error
+            db.session.rollback()
+            return {"error": f"An error occurred while assigning the job: {str(e)}"}, 500
 
         return {
             'message': f'Successfully assigned Warden {warden_id} to chowki {chowki_id} for shift {shift_id} on {duty_date}.'

@@ -22,19 +22,16 @@ def get_all_cities():
         return jsonify({'error': str(exp)}), 500
 
 
-
-
-
 @app.route('/citybyid', methods=['GET'])
 def get_city_by_id():
     try:
         data = request.get_json()
         city_id = data.get('id')
-        print(city_id)
+
         if not city_id:
             return jsonify({"error": "City id is required"}), 400
-        city = LocationController.get_city_by_id(city_id)
-        return jsonify(city)
+        city ,code = LocationController.get_city_by_id(city_id)
+        return jsonify(city),code
     except Exception as exp:
         return jsonify({'error': str(exp)}), 500
 
@@ -43,8 +40,8 @@ def get_city_by_id():
 def get_city_by_name():
     try:
         city_name = request.args.get('name')
-        city = LocationController.get_city_by_name(city_name)
-        return jsonify(city),200
+        city ,code= LocationController.get_city_by_name(city_name)
+        return jsonify(city),code
     except Exception as exp:
         return jsonify({'error': str(exp)}), 500
 
@@ -60,8 +57,8 @@ def add_city():
 
 
         # Add the new city
-        city=LocationController.add_city(city_name)
-        return jsonify(city), 201
+        city,code=LocationController.add_city(city_name)
+        return jsonify(city), code
     except Exception as exp:
         return jsonify({'error': str(exp)}), 500
 
@@ -75,8 +72,8 @@ def delete_city_by_name():
             return jsonify({"error": "City name is required"}), 400
 
         # Delete the city and get the success message
-        message = LocationController.delete_city(city_name)
-        return jsonify(message)
+        message,code = LocationController.delete_city(city_name)
+        return jsonify(message),code
     except Exception as exp:
         return jsonify({'error': str(exp)}), 500
 
@@ -93,8 +90,8 @@ def update_city():
         if not city_name or not new_name:
             return jsonify({"error": "Both current city name and new name are required"}), 400
 
-        message=LocationController.update_city(city_name, new_name)
-        return jsonify(message)
+        message,code=LocationController.update_city(city_name, new_name)
+        return jsonify(message),code
     except Exception as exp:
         return jsonify({'error': str(exp)}), 500
 
@@ -127,8 +124,8 @@ def get_place_by_id():
         print(place_id)
         if not place_id:
             return jsonify({"error": "Place id is required"}), 400
-        place = LocationController.get_place_by_id(place_id)
-        return jsonify(place)
+        place,code = LocationController.get_place_by_id(place_id)
+        return jsonify(place),code
     except Exception as exp:
         return jsonify({'error': str(exp)}), 500
 
@@ -137,8 +134,8 @@ def get_place_by_id():
 def get_place_by_name():
     try:
         place_name = request.args.get('name')
-        place = LocationController.get_place_by_name(place_name)
-        return jsonify(place)
+        place ,code= LocationController.get_place_by_name(place_name)
+        return jsonify(place),code
     except Exception as exp:
         return jsonify({'error': str(exp)}), 500
 
@@ -154,8 +151,8 @@ def add_place():
             return jsonify({"error": "Both City & Place name is required"}), 400
 
         # Add the new Place
-        place=LocationController.add_place(city_name,place_name)
-        return jsonify(place), 201
+        place,code=LocationController.add_place(city_name,place_name)
+        return jsonify(place), code
     except Exception as exp:
         return jsonify({'error': str(exp)}), 500
 
@@ -171,8 +168,8 @@ def delete_place_by_name():
             return jsonify({"error": "Place name & City Name  is required"}), 400
 
         # Delete the Place and get the success message
-        message = LocationController.delete_place(city_name,place_name)
-        return jsonify(message)
+        message,code = LocationController.delete_place(city_name,place_name)
+        return jsonify(message),code
     except Exception as exp:
         return jsonify({'error': str(exp)}), 500
 
@@ -189,8 +186,8 @@ def update_place():
         if not place_name or not new_name:
             return jsonify({"error": "Both current Place name and new name are required"}), 400
 
-        message=LocationController.update_place(place_name, new_name)
-        return jsonify(message)
+        message,code=LocationController.update_place(place_name, new_name)
+        return jsonify(message),code
     except Exception as exp:
         return jsonify({'error': str(exp)}), 500
 
@@ -205,10 +202,8 @@ def get_all_directions():
         print(place_name)
         if not place_name:
             return jsonify({"error": "Place name is required"}), 400
-        directions = LocationController.get_all_Directions(place_name)
-        if not directions:
-            return jsonify({"error": "No Direction found for the specified Place"}), 404
-        return jsonify(directions)
+        directions,code = LocationController.get_all_Directions(place_name)
+        return jsonify(directions),code
     except Exception as exp:
         return jsonify({'error': str(exp)}), 500
 
@@ -222,8 +217,8 @@ def get_direction_by_id():
         print(direction_id)
         if not direction_id:
             return jsonify({"error": "Direction id is required"}), 400
-        directions = LocationController.get_direction_by_id(direction_id)
-        return jsonify(directions)
+        directions,code = LocationController.get_direction_by_id(direction_id)
+        return jsonify(directions),code
     except Exception as exp:
         return jsonify({'error': str(exp)}), 500
 
@@ -233,8 +228,8 @@ def get_direction_by_id():
 def get_direction_by_name():
     try:
         direction_name = request.args.get('name')
-        direction = LocationController.get_direction_by_name(direction_name)
-        return jsonify(direction)
+        direction,code = LocationController.get_direction_by_name(direction_name)
+        return jsonify(direction),code
     except Exception as exp:
         return jsonify({'error': str(exp)}), 500
 
@@ -251,8 +246,8 @@ def add_direction():
             return jsonify({"error": "Both  Place & Direction name is required"}), 400
 
         # Add the new Direction
-        direction=LocationController.add_direction(place_name,direction_name)
-        return jsonify(direction), 201
+        direction,code=LocationController.add_direction(place_name,direction_name)
+        return jsonify(direction), code
     except Exception as exp:
         return jsonify({'error': str(exp)}), 500
 
@@ -267,8 +262,8 @@ def delete_direction_by_name():
             return jsonify({"error": "Place name & Direction name is required"}), 400
 
         # Delete the Place and get the success message
-        message = LocationController.delete_direction(place_name,direction_name)
-        return jsonify(message)
+        message ,code= LocationController.delete_direction(place_name,direction_name)
+        return jsonify(message),code
     except Exception as exp:
         return jsonify({'error': str(exp)}), 500
 
@@ -287,8 +282,8 @@ def update_direction():
         if not place_name or not new_name or not direction_name:
             return jsonify({"error": "Place ,Direction name  and new Direction name are required"}), 400
 
-        message=LocationController.update_direction(place_name,direction_name,new_name)
-        return jsonify(message)
+        message, code=LocationController.update_direction(place_name,direction_name,new_name)
+        return jsonify(message),code
     except Exception as exp:
         return jsonify({'error': str(exp)}), 500
 
@@ -304,10 +299,9 @@ def get_all_camera():
         if not place_name or not  direction_name:
             return jsonify({"error": "Place name & direction name is required"}), 400
 
-        cameras= CameraChowkiController.get_all_camera(place_name, direction_name)
-        if not cameras:
-            return jsonify({"error": f"No camera found for the specified Place {place_name} on Direction {direction_name}"}), 404
-        return jsonify(cameras)
+        cameras,code= CameraChowkiController.get_all_camera(place_name, direction_name)
+
+        return jsonify(cameras),code
     except Exception as exp:
         return jsonify({'error': str(exp)}), 500
 
@@ -320,8 +314,8 @@ def get_camera_by_id():
         print(camera_id)
         if not camera_id:
             return jsonify({"error": "Camera id is required"}), 400
-        camera = CameraChowkiController.get_camera_by_id(camera_id)
-        return jsonify(camera)
+        camera ,code= CameraChowkiController.get_camera_by_id(camera_id)
+        return jsonify(camera),code
     except Exception as exp:
         return jsonify({'error': str(exp)}), 500
 
@@ -330,8 +324,11 @@ def get_camera_by_id():
 def get_camera_by_name():
     try:
         camera_name = request.args.get('name')
-        camera =CameraChowkiController.get_camera_by_name(camera_name)
-        return jsonify(camera)
+        if not camera_name:
+            return jsonify({'error':'Camera name is required in argument'}),400
+
+        camera ,code=CameraChowkiController.get_camera_by_name(camera_name)
+        return jsonify(camera),code
     except Exception as exp:
         return jsonify({'error': str(exp)}), 500
 
@@ -343,14 +340,11 @@ def add_camera():
         name = data.get('name')
         direction_name = data.get('directionname')
         cam_type=data.get('type')
-
-
         if not name or not direction_name or not cam_type:
             return jsonify({"error": " Camera,Direction name & Camera Type  is required"}), 400
 
-        # Add the new Direction
-        camera = CameraChowkiController.add_camera(name,direction_name,cam_type)
-        return jsonify(camera), 201
+        camera,code = CameraChowkiController.add_camera(name,direction_name,cam_type)
+        return jsonify(camera), code
     except Exception as exp:
         return jsonify({'error': str(exp)}), 500
 
@@ -366,8 +360,8 @@ def delete_camera_by_name():
             return jsonify({"error": "Direction name ,Camera name and Type  is required"}), 400
 
         # Delete the Camera and get the success message
-        message = CameraChowkiController.delete_camera(camera_name,direction_name,camera_type)
-        return jsonify(message)
+        message ,code = CameraChowkiController.delete_camera(camera_name,direction_name,camera_type)
+        return jsonify(message),code
     except Exception as exp:
         return jsonify({'error': str(exp)}), 500
 ########################################  Chowki  ############################################
@@ -377,15 +371,11 @@ def get_all_chowki():
     try:
         data = request.get_json()
         place_name = data.get('placename')
-
         print(place_name )
         if not place_name :
             return jsonify({"error": "Place name  is required"}), 400
-
-        chowki= CameraChowkiController.get_all_Chowki(place_name)
-        if not chowki:
-            return jsonify({"error": f"No Chowki found for the specified Place {place_name}"}), 404
-        return jsonify(chowki)
+        chowki,code= CameraChowkiController.get_all_Chowki(place_name)
+        return jsonify(chowki),code
     except Exception as exp:
         return jsonify({'error': str(exp)}), 500
 
@@ -397,8 +387,8 @@ def get_chowki_by_id():
         print(chowki_id)
         if not chowki_id:
             return jsonify({"error": "Chowki id is required"}), 400
-        chowki = CameraChowkiController.get_chowki_by_id(chowki_id)
-        return jsonify(chowki)
+        chowki ,code= CameraChowkiController.get_chowki_by_id(chowki_id)
+        return jsonify(chowki),code
     except Exception as exp:
         return jsonify({'error': str(exp)}), 500
 
@@ -408,9 +398,10 @@ def get_chowki_by_name():
     try:
         data = request.get_json()
         chowki_name = data.get('name')
-
-        chowki =CameraChowkiController.get_chowki_by_name(chowki_name)
-        return jsonify(chowki)
+        if not chowki_name:
+            return jsonify({'error': 'Naka Name is Required'}),400
+        chowki,code =CameraChowkiController.get_chowki_by_name(chowki_name)
+        return jsonify(chowki),code
     except Exception as exp:
         return jsonify({'error': str(exp)}), 500
 
@@ -418,15 +409,15 @@ def get_chowki_by_name():
 def add_chowki():
     try:
         data = request.get_json()
-        name = data.get('name')
+        chowkiname = data.get('name')
         place_name = data.get('placename')
 
-        if not name or not place_name:
+        if not chowkiname or not place_name:
             return jsonify({"error": " Chowki Name,Place name is required"}), 400
 
         # Add the new Chowki
-        chowki = CameraChowkiController.add_chowki(name,place_name)
-        return jsonify(chowki), 201
+        chowki,code = CameraChowkiController.add_chowki(chowkiname,place_name)
+        return jsonify(chowki), code
     except Exception as exp:
         return jsonify({'error': str(exp)}), 500
 
@@ -442,15 +433,15 @@ def delete_chowki_by_name():
             return jsonify({"error": " Chowki name,Place name is required"}), 400
 
         # Delete the Chowki and get the success message
-        message = CameraChowkiController.delete_chowki(name,place_name)
-        return jsonify(message)
+        message,code = CameraChowkiController.delete_chowki(name,place_name)
+        return jsonify(message),code
     except Exception as exp:
         return jsonify({'error': str(exp)}), 500
 
 ########################################  CameraChowki  ############################################
 
 
-@app.route('/chowkicamera', methods=['GET'])
+@app.route('/chowkicameraincity', methods=['GET'])
 def get_all_chowkicamera_bycity():
     try:
         data = request.get_json()
@@ -460,12 +451,12 @@ def get_all_chowkicamera_bycity():
         if not city_name :
             return jsonify({"error": "city name  is required"}), 400
 
-        chowki_info = CameraChowkiController.get_all_ChowkiCamera_bycity(city_name)
+        chowki_info,code = CameraChowkiController.get_all_ChowkiCamera_bycity(city_name)
 
         if not chowki_info:
             return jsonify({"error": f" Camera_Chowki not found for the specified City {city_name}"}), 404
 
-        return jsonify(chowki_info)
+        return jsonify(chowki_info),code
     except Exception as exp:
         return jsonify({'error': str(exp)}), 500
 
@@ -480,14 +471,14 @@ def get_all_chowkicamera_byplace():
 
         print(place_name )
         if not place_name :
-            return jsonify({"error": "city name  is required"}), 400
+            return jsonify({"error": "place name  is required"}), 400
 
-        chowki_info = CameraChowkiController.get_all_ChowkiCamera_byplace(place_name)
+        chowki_info ,code= CameraChowkiController.get_all_ChowkiCamera_byplace(place_name)
 
         if not chowki_info:
             return jsonify({"error": f" Camera_Chowki not found for the specified Place {place_name}"}), 404
 
-        return jsonify(chowki_info)
+        return jsonify(chowki_info),code
     except Exception as exp:
         return jsonify({'error': str(exp)}), 500
 
@@ -501,12 +492,12 @@ def get_all_camera_with_chowki():
         if not chowki_name :
             return jsonify({"error": "Chowki name  is required"}), 400
 
-        chowki_info = CameraChowkiController.get_all_linkCamera_with_Chowki(chowki_name)
+        chowki_info,code = CameraChowkiController.get_all_linkCamera_with_Chowki(chowki_name)
 
         if not chowki_info:
-            return jsonify({"error": f" Camera is linked for the specified Chowki {chowki_name}"}), 404
+            return jsonify({"error": f" No Camera is linked for the specified Chowki {chowki_name}"}), 404
 
-        return jsonify(chowki_info)
+        return jsonify(chowki_info),code
     except Exception as exp:
         return jsonify({'error': str(exp)}), 500
 
@@ -520,12 +511,12 @@ def get_all_chowki_with_camera():
         if not camera_name :
             return jsonify({"error": "Camera name  is required"}), 400
 
-        chowki_info = CameraChowkiController.get_all_linkChowki_with_Camera(camera_name)
+        chowki_info,code = CameraChowkiController.get_all_linkChowki_with_Camera(camera_name)
 
         if not chowki_info:
             return jsonify({"error": f" Camera is linked for the specified Chowki {camera_name}"}), 404
 
-        return jsonify(chowki_info)
+        return jsonify(chowki_info),code
     except Exception as exp:
         return jsonify({'error': str(exp)}), 500
 
@@ -539,8 +530,8 @@ def add_camerachowki():
         if not camera_list or not chowki_name:
             return jsonify({"error": " Chowki Name,camera name is required"}), 400
 
-        chowki = CameraChowkiController.link_camera_to_chowki(chowki_name, camera_list)
-        return jsonify(chowki), 201
+        chowki,code = CameraChowkiController.link_camera_to_chowki(chowki_name, camera_list)
+        return jsonify(chowki), code
     except Exception as exp:
         return jsonify({'error': str(exp)}), 500
 
@@ -556,8 +547,8 @@ def delete_camerachowki():
         if not camera_list or not chowki_name:
             return jsonify({"error": " Chowki name,camera name is required"}), 400
 
-        chowki = CameraChowkiController.unlink_camera_from_chowki(chowki_name, camera_list)
-        return jsonify(chowki), 201
+        chowki,code = CameraChowkiController.unlink_camera_from_chowki(chowki_name, camera_list)
+        return jsonify(chowki), code
     except Exception as exp:
         return jsonify({'error': str(exp)}), 500
 
@@ -576,13 +567,13 @@ def update_camerachowki():
             return jsonify({"error": "Chowki name, and at least one camera name (to link or unlink) are required"}), 400
 
         # Call the controller method to update linked cameras
-        result = CameraChowkiController.update_linked_cameras_with_chowki(
+        result ,code= CameraChowkiController.update_linked_cameras_with_chowki(
             chowki_name,
             link_camera_list or [],  # Default to empty list if no cameras to link
             unlink_camera_list or []  # Default to empty list if no cameras to unlink
         )
 
-        return jsonify({"message": result}), 200  # Return the result with a 200 status code
+        return jsonify({"message": result}), code  # Return the result with a 200 status code
     except Exception as exp:
         return jsonify({'error': str(exp)}), 500
 
@@ -593,7 +584,7 @@ def get_all_shift():
     try:
         shift_list = WardenChowkiController.get_all_Shift()
         print(shift_list)
-        return jsonify(shift_list)
+        return jsonify(shift_list),200
     except Exception as exp:
         return jsonify({'error': str(exp)}), 500
 
@@ -606,8 +597,8 @@ def get_shift_by_id():
         print(shift_id)
         if not shift_id:
             return jsonify({"error": "Shift id is required"}), 400
-        shift=WardenChowkiController.get_shift_by_id(shift_id)
-        return jsonify(shift)
+        shift,code=WardenChowkiController.get_shift_by_id(shift_id)
+        return jsonify(shift),code
     except Exception as exp:
         return jsonify({'error': str(exp)}), 500
 
@@ -617,8 +608,10 @@ def get_shift_by_name():
     try:
         data = request.get_json()
         shift_name = data.get('shiftname')
-        shift = WardenChowkiController.get_shift_by_name(shift_name)
-        return jsonify(shift)
+        if not shift_name:
+            return jsonify({"error": "Shift name is required"}), 400
+        shift,code = WardenChowkiController.get_shift_by_name(shift_name)
+        return jsonify(shift),code
     except Exception as exp:
         return jsonify({'error': str(exp)}), 500
 
@@ -640,9 +633,9 @@ def add_shift():
         shift_endtime = datetime.strptime(shift_endtime, "%H:%M:%S").time()
 
         # Add the new shift
-        shift_response = WardenChowkiController.add_shift(shift_name, shift_starttime, shift_endtime)
+        shift_response,code = WardenChowkiController.add_shift(shift_name, shift_starttime, shift_endtime)
 
-        return jsonify(shift_response), 201
+        return jsonify(shift_response), code
     except ValueError as ve:
         return jsonify({'error': f'{ve}\nInvalid time format. Use HH:MM:SS. '}), 400
     except Exception as exp:
@@ -663,8 +656,8 @@ def delete_shift_by_name():
         # Convert string times to time objects
         shift_starttime = datetime.strptime(shift_starttime, "%H:%M:%S").time()
         shift_endtime = datetime.strptime(shift_endtime, "%H:%M:%S").time()
-        message = WardenChowkiController.update_shift(shift_name,shift_starttime,shift_endtime)
-        return jsonify(message)
+        message,code = WardenChowkiController.update_shift(shift_name,shift_starttime,shift_endtime)
+        return jsonify(message),code
     except Exception as exp:
         return jsonify({'error': str(exp)}), 500
 
@@ -681,8 +674,8 @@ def update_shifty():
         if not city_name or not new_name:
             return jsonify({"error": "Both current city name and new name are required"}), 400
 
-        message=LocationController.update_city(city_name, new_name)
-        return jsonify(message)
+        message,code=LocationController.update_city(city_name, new_name)
+        return jsonify(message),code
     except Exception as exp:
         return jsonify({'error': str(exp)}), 500
 
@@ -691,9 +684,8 @@ def update_shifty():
 @app.route('/trafficwarden', methods=['GET'])
 def get_all_trafficwarden():
     try:
-        warden_list = WardenChowkiController.get_all_warden()
-        print(warden_list)
-        return jsonify(warden_list)
+        warden_list ,code= WardenChowkiController.get_all_warden()
+        return jsonify(warden_list),code
     except Exception as exp:
         return jsonify({'error': str(exp)}), 500
 
@@ -706,21 +698,24 @@ def get_warden_in_city():
         city_name = data.get('cityname')
         if not city_name:
             return jsonify({"error": "City name is required"}), 400
-        warden=WardenChowkiController.get_all_warden_city(city_name)
+        warden,code=WardenChowkiController.get_all_warden_city(city_name)
         if warden:
-            return jsonify(warden)
+            return jsonify(warden),code
         else:
-            return ({"Invalid": f"No traffic Warden exist from the location {city_name}"}), 400
+            return jsonify({"Invalid": f"No traffic Warden exist from the location {city_name}"}), 400
     except Exception as exp:
         return jsonify({'error': str(exp)}), 500
+
 
 @app.route('/wardentbycnic', methods=['GET'])
 def get_warden_by_cnic():
     try:
         data = request.get_json()
         warden_cnic = data.get('cnic')
-        warden = WardenChowkiController.get_warden_by_cnic(warden_cnic)
-        return jsonify(warden)
+        if not warden_cnic:
+            return jsonify({"error": "Warden Cnic is required"}), 400
+        warden,code = WardenChowkiController.get_warden_by_cnic(warden_cnic)
+        return jsonify(warden),code
     except Exception as exp:
         return jsonify({'error': str(exp)}), 500
 
@@ -741,8 +736,8 @@ def add_warden():
             return jsonify({"error": "Warden name, badge_number , address, cnic , email, mobile_number, and city_name are required."}), 400
 
         # Add the new warden
-        new_warden = WardenChowkiController.add_warden(name, badge_number, address, cnic, email, mobile_number, city_name)
-        return jsonify(new_warden), 201
+        new_warden,code = WardenChowkiController.add_warden(name, badge_number, address, cnic, email, mobile_number, city_name)
+        return jsonify(new_warden), code
     except Exception as exp:
         return jsonify({'error': str(exp)}), 500
 
@@ -756,8 +751,9 @@ def delete_warden_route():
 
         if not cnic:
             return jsonify({"error": "CNIC  is required"}), 400
+        message,code=WardenChowkiController.delete_warden(cnic)
+        return jsonify(message),code
 
-        return WardenChowkiController.delete_warden(cnic)
     except Exception as exp:
         return jsonify({'error': str(exp)}), 500
 
@@ -768,7 +764,10 @@ def update_warden_route():
     try:
         data = request.get_json()
         cnic = data.get('cnic')
-        return WardenChowkiController.update_warden(
+        if not cnic:
+            return jsonify({'error':'Cnic Is required'}),400
+
+        message,code=WardenChowkiController.update_warden(
             cnic,
             name=data.get('name'),
             badge_number=data.get('badgenumber'),
@@ -777,6 +776,7 @@ def update_warden_route():
             mobile_number=data.get('mobilenumber'),
             city_name=data.get('cityname')
         )
+        return jsonify(message),code
     except Exception as exp:
         return jsonify({'error': str(exp)}), 500
 ########################################  WardenChowki  ############################################
@@ -784,8 +784,8 @@ def update_warden_route():
 @app.route('/wardenassignments', methods=['POST'])
 def warden_assignments():
     try:
-        duty=WardenChowkiController.create_duty_roster()
-        return jsonify({"sucessfully":duty})
+        duty,code=WardenChowkiController.create_duty_roster()
+        return jsonify({"sucessfully":duty}),code
     except Exception as exp:
         return jsonify({'error': str(exp)}), 500
 
@@ -802,8 +802,8 @@ def assign_warden():
             return jsonify({"error": "Warden_id, Chowki_id & Shift_id are required."}), 400
 
         # Add the new warden
-        new_assignment = WardenChowkiController.assignwarden(warden_id, chowki_id, shift_id)
-        return jsonify(new_assignment), 201
+        new_assignment,code = WardenChowkiController.assignwarden(warden_id, chowki_id, shift_id)
+        return jsonify(new_assignment), code
     except Exception as exp:
         return jsonify({'error': str(exp)}), 500
 
@@ -813,8 +813,9 @@ def get_all_dutyroster():
     try:
 
         dutyroster_list = WardenChowkiController.get_all_assignments_on_last_assign_date()
+
         print(dutyroster_list)
-        return jsonify(dutyroster_list)
+        return jsonify(dutyroster_list),200
     except Exception as exp:
         return jsonify({'error': str(exp)}), 500
 
@@ -824,15 +825,17 @@ def get_all_dutyroster_of_warden():
     try:
         data = request.get_json()
         badge_number = data.get('badgenumber')
+        if not badge_number:
+            return jsonify({'error':'Badge Number are required'}),400
         dutyroster_list = WardenChowkiController.get_dutyroster_for_warden(badge_number)
         print(dutyroster_list)
-        return jsonify(dutyroster_list)
+        return jsonify(dutyroster_list),200
     except Exception as exp:
         return jsonify({'error': str(exp)}), 500
 
 
 
-########################################  Vehicle  ############################################
+########################################  Vehicle  ########################################################
 @app.route('/vehicle', methods=['GET'])
 def get_all_vehicles():
     try:
@@ -1092,6 +1095,7 @@ def delete_violation_fine(fine_id):
         return jsonify({'error': str(exp)}), 500
 
 ########################################  ViolationsHistory & Its Details ############################################
+
 @app.route('/addviolationsrecord', methods=['POST'])
 def create_violation():
     try:
@@ -1237,6 +1241,91 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 # Ensure the upload folder exists
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
+@app.route('/autoupload-image', methods=['POST'])
+def autoupload_image():
+    try:
+        # Check if the request contains a file
+        if 'image' not in request.files:
+            return "No image file provided", 400
+
+        file = request.files['image']
+        bikenumber = request.form.get('bikenumber')
+        text_value = request.form.get('camera_id')
+
+
+        # Read and open the image using PIL
+        if file.filename != '':
+            image = Image.open(io.BytesIO(file.read()))
+
+            # Save the image in the upload folder
+            file_path = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
+            image.save(file_path)
+            model_path = r'C:\Drive D\Pycharm\TrafficGuardian\yolov8mtrafficmodel.pt'
+            model_pathr= r'C:\Drive D\Pycharm\TrafficGuardian\yolov8s.pt'
+            preprocessed_image=yolov8.preprocess_image(image)
+
+            print("Preprocessed image shape:", preprocessed_image.shape)
+            violations_and_plates = yolov8.detect_violations_from_Image(file_path, model_path ,model_pathr)
+
+            try:
+                camera = CameraChowkiController.get_camera_by_id(text_value)[0]
+                camera_location = camera['Direction']
+            except Exception as e:
+                return jsonify({"message": f"An error occurred in getting location: {str(e)}"}), 500
+
+
+
+            try:
+                bike = ChallanController.get_vehicle_by_licenseplate(bikenumber)
+                if 'error' in bike:
+                    message = ChallanController.add_vehicle(bikenumber, 'Bike')
+                    if 'Successfully' in message:
+                        bike = ChallanController.get_vehicle_by_licenseplate(bikenumber)
+                print(bike['id'], "bike id")
+            except Exception as e:
+                return jsonify({"message": f"An error occurred in getting Bike: {str(e)}"}), 500
+
+            print(bike)
+            status = 'Pending'
+            created_date = datetime.today().strftime('%Y-%m-%d')
+            print(text_value, bikenumber, camera_location, status, created_date)
+            violations_ids=[]
+            try:
+
+                detected_violations=violations_and_plates[0]["violations"]
+                print(detected_violations)
+
+                for i in detected_violations:
+                    if i == 'No Helmet':
+                        violations_ids.append(1)
+                    elif i == 'Side Mirror':
+                        violations_ids.append(3)
+                    elif i.__contains__('Oversitting'):
+                        violations_ids.append(2)
+
+            except Exception as e:
+                return jsonify({"message": f"An error occurred getting Violations: {str(e)}"}), 500
+
+            try:
+
+                 response, code = ChallanController.add_violation_history_and_details(bike['id'], created_date,
+                                                                                     camera_location, status,file_path,text_value,violations_ids)
+            except Exception as e:
+                return jsonify({"message": f"An error occurred Add Violation History: {str(e)}"}), 500
+
+            # Return the result in JSON format
+            return jsonify({
+                'message': 'Image uploaded and processed successfully',
+                'violations_and_plates': violations_and_plates
+            }), 200
+        else:
+            return jsonify({"message": "File has no filename"}), 400
+
+    except Exception as e:
+        # Handle exceptions that may occur
+        return jsonify({"message": f"An error occurred: {str(e)}"}), 500
+
+
 @app.route('/upload-image', methods=['POST'])
 def upload_image():
     try:
@@ -1253,10 +1342,13 @@ def upload_image():
             # Save the image in the upload folder
             file_path = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
             image.save(file_path)
-            model_path = r'C:\Users\92306\PycharmProjects\TrafficGuardian\yolov8s.pt'
+            model_path = r'C:\Drive D\Pycharm\TrafficGuardian\yolov8mtrafficmodel.pt'
+            model_pathr= r'C:\Drive D\Pycharm\TrafficGuardian\yolov8s.pt'
             preprocessed_image=yolov8.preprocess_image(image)
+
             print("Preprocessed image shape:", preprocessed_image.shape)
-            violations_and_plates = yolov8.detect_violations_from_Image(file_path, model_path)
+            violations_and_plates = yolov8.detect_violations_from_Image(file_path, model_path ,model_pathr)
+
 
             # Return the result in JSON format
             return jsonify({

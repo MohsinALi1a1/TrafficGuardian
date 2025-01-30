@@ -4,43 +4,18 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="6099f9b0-72b9-42ed-926f-93f4c7ea9004" name="Changes" comment="29-11-2024 (Model Training 29)">
-      <change afterPath="$PROJECT_DIR$/5927708-hd_1080_1920_30fps.mp4" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Controller/LoginController.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Controller/video test.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Driving test in Islamabad.mp4" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Snapinsta.app_video_AQP78dBn7Y7fBMUxrBuoOncpuYJ09wEelniBR6SkTuTVFWkX1NVR4XsXheVHYfoBN9dhzR5hra_2uvcnIjyeixX4LsExM7Oq2o4ouo4.mp4" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/yolov8mtrafficmodel.pt" afterDir="false" />
+    <list default="true" id="6099f9b0-72b9-42ed-926f-93f4c7ea9004" name="Changes" comment="01-01-2025 (Specific Class Detection)">
+      <change beforePath="$PROJECT_DIR$/.idea/TrafficGuardian.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/TrafficGuardian.iml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Controller/CameraChowkiController.py" beforeDir="false" afterPath="$PROJECT_DIR$/Controller/CameraChowkiController.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Controller/ChallanController.py" beforeDir="false" afterPath="$PROJECT_DIR$/Controller/ChallanController.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Controller/LocationController.py" beforeDir="false" afterPath="$PROJECT_DIR$/Controller/LocationController.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Controller/WardenChowkiController.py" beforeDir="false" afterPath="$PROJECT_DIR$/Controller/WardenChowkiController.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Controller/YoloController.py" beforeDir="false" afterPath="$PROJECT_DIR$/Controller/YoloController.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Controller/video test.py" beforeDir="false" afterPath="$PROJECT_DIR$/Controller/video test.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Model/Configure.py" beforeDir="false" afterPath="$PROJECT_DIR$/Model/Configure.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Router.py" beforeDir="false" afterPath="$PROJECT_DIR$/Router.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/runs/detect/train26/F1_curve.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/runs/detect/train26/PR_curve.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/runs/detect/train26/P_curve.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/runs/detect/train26/R_curve.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/runs/detect/train26/args.yaml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/runs/detect/train26/confusion_matrix.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/runs/detect/train26/confusion_matrix_normalized.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/runs/detect/train26/events.out.tfevents.1732772994.DESKTOP-6PBQUTC.8176.0" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/runs/detect/train26/labels.jpg" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/runs/detect/train26/labels_correlogram.jpg" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/runs/detect/train26/results.csv" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/runs/detect/train26/results.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/runs/detect/train26/train_batch0.jpg" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/runs/detect/train26/train_batch1.jpg" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/runs/detect/train26/train_batch14630.jpg" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/runs/detect/train26/train_batch14631.jpg" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/runs/detect/train26/train_batch14632.jpg" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/runs/detect/train26/train_batch2.jpg" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/runs/detect/train26/val_batch0_labels.jpg" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/runs/detect/train26/val_batch0_pred.jpg" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/runs/detect/train26/val_batch1_labels.jpg" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/runs/detect/train26/val_batch1_pred.jpg" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/runs/detect/train26/val_batch2_labels.jpg" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/runs/detect/train26/val_batch2_pred.jpg" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/runs/detect/train26/weights/best.pt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/runs/detect/train26/weights/last.pt" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -68,15 +43,16 @@
     &quot;assignee&quot;: &quot;MohsinALi1a1&quot;
   }
 }</component>
-  <component name="GithubPullRequestsUISettings">{
-  &quot;selectedUrlAndAccountId&quot;: {
-    &quot;url&quot;: &quot;https://github.com/MohsinALi1a1/TrafficGuardian.git&quot;,
-    &quot;accountId&quot;: &quot;0fc19df7-be3b-4f10-9988-fc3943e7f7a6&quot;
+  <component name="GithubPullRequestsUISettings"><![CDATA[{
+  "selectedUrlAndAccountId": {
+    "url": "https://github.com/MohsinALi1a1/TrafficGuardian.git",
+    "accountId": "351e6f22-8610-4413-83e3-34d3630042fe"
   }
-}</component>
+}]]></component>
   <component name="HighlightingSettingsPerFile">
     <setting file="file://$PROJECT_DIR$/Controller/CameraChowkiController.py" root0="SKIP_INSPECTION" />
     <setting file="file://$PROJECT_DIR$/Controller/YoloController.py" root0="SKIP_INSPECTION" />
+    <setting file="file://$PROJECT_DIR$/Router.py" root0="SKIP_INSPECTION" />
   </component>
   <component name="ProblemsViewState">
     <option name="selectedTabId" value="CurrentFile" />
@@ -104,10 +80,11 @@
     &quot;Python.train_and_detect.executor&quot;: &quot;Run&quot;,
     &quot;Python.video test.executor&quot;: &quot;Run&quot;,
     &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
     &quot;git-widget-placeholder&quot;: &quot;TrafficGuardian&quot;,
     &quot;ignore.virus.scanning.warn.message&quot;: &quot;true&quot;,
-    &quot;last_opened_file_path&quot;: &quot;C:/Users/92306/PycharmProjects/TrafficGuardian&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.pluginManager&quot;
+    &quot;last_opened_file_path&quot;: &quot;C:/Drive D/Pycharm/TrafficGuardian&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;vcs.Git&quot;
   }
 }</component>
   <component name="RecentsManager">
@@ -115,14 +92,14 @@
       <recent name="C:\Users\92306\PycharmProjects\TrafficGuardian" />
     </key>
     <key name="MoveFile.RECENT_KEYS">
+      <recent name="C:\Drive D\Pycharm\TrafficGuardian" />
       <recent name="C:\Users\92306\PycharmProjects\TrafficGuardian" />
       <recent name="C:\Users\92306\PycharmProjects\TrafficGuardian\runs\detect" />
       <recent name="C:\Users\92306\PycharmProjects\TrafficGuardian\runs" />
       <recent name="C:\Users\92306\PycharmProjects\TrafficGuardian\Dataset\Images\Train" />
-      <recent name="C:\Users\92306\PycharmProjects\TrafficGuardian\Dataset\Images" />
     </key>
   </component>
-  <component name="RunManager" selected="Python.main">
+  <component name="RunManager" selected="Python.Router">
     <configuration name="Router" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="TrafficGuardian" />
       <option name="ENV_FILES" value="" />
@@ -199,7 +176,7 @@
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
-        <option value="bundled-python-sdk-d7ad00fb9fc3-c546a90a8094-com.jetbrains.pycharm.community.sharedIndexes.bundled-PC-242.23726.102" />
+        <option value="bundled-python-sdk-495700d161d3-aa17d162503b-com.jetbrains.pycharm.community.sharedIndexes.bundled-PC-243.22562.220" />
       </set>
     </attachedChunks>
   </component>
@@ -268,7 +245,15 @@
       <option name="project" value="LOCAL" />
       <updated>1732894230367</updated>
     </task>
-    <option name="localTasksCounter" value="8" />
+    <task id="LOCAL-00008" summary="01-01-2025 (Specific Class Detection)">
+      <option name="closed" value="true" />
+      <created>1735740556330</created>
+      <option name="number" value="00008" />
+      <option name="presentableId" value="LOCAL-00008" />
+      <option name="project" value="LOCAL" />
+      <updated>1735740556330</updated>
+    </task>
+    <option name="localTasksCounter" value="9" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -289,6 +274,7 @@
     <MESSAGE value="16-10-2024(Duty Roster ,Challan Controller)" />
     <MESSAGE value="22-10-2024(Challan Controller)" />
     <MESSAGE value="29-11-2024 (Model Training 29)" />
-    <option name="LAST_COMMIT_MESSAGE" value="29-11-2024 (Model Training 29)" />
+    <MESSAGE value="01-01-2025 (Specific Class Detection)" />
+    <option name="LAST_COMMIT_MESSAGE" value="01-01-2025 (Specific Class Detection)" />
   </component>
 </project>

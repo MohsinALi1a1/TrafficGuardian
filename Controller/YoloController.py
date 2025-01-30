@@ -39,6 +39,7 @@ class yolov8:
                 class_name = prediction_result.names[class_id]  # Class name
                 detected_classes.append(class_name)
         return detected_classes
+
     @staticmethod
     def count_object(prediction_result, object_name):
 
@@ -123,18 +124,19 @@ class yolov8:
     # Step 1: Train the model
     def train_model(data_path, saved_model_path):
         # Load the model
-        model = YOLO('yolov8s.pt')  # Using the small version for a balance of speed and accuracy
+        model = YOLO('yolov8s.pt')
         print("Training the model...")
         model.train(data=data_path, epochs=100, imgsz=640)
         print("Training completed.")
         model.save(saved_model_path)  # Save the trained model
 
     @staticmethod
-    def detect_violations_from_Image(source, model_path, save_dir=r"./Predictions"):
+    def detect_violations_from_Image(source, model_path,model_pathr, save_dir=r"./Predictions"):
         os.makedirs(save_dir, exist_ok=True)  # Ensure save directory exists
         model = YOLO(model_path)
-
+        model1=YOLO(model_pathr)
         results = model.predict(source=source, show=False)
+        results1=model1.predict(source=source, show=False)
 
         violations_and_plates = []  # List to store violations and cropped plates
 
@@ -147,11 +149,11 @@ class yolov8:
 
             violations = []
             if not helmet_detected:
-                violations.append("Helmet")
+                violations.append("No Helmet")
             if not side_mirrors_detected:
-                violations.append("Side Mirrors")
+                violations.append("Side Mirror")
             if count_head >= 2:
-                violations.append(f"Persons: {count_head}")
+                violations.append(f" Oversitting Persons: {count_head}")
             if not cropped_plates:  # Check if no plates were detected
                 violations.append("License Plate : Not Found")
 
@@ -195,8 +197,9 @@ class yolov8:
             # Append violations and cropped license plate (if detected)
             violations_and_plates.append({
                 'violations': violations,
-                'cropped_license_plate': cropped_plates[0] if cropped_plates else None
+                'cropped_license_plate': save_path if cropped_plates else None
             })
+
 
         return violations_and_plates
 
@@ -224,7 +227,7 @@ class yolov8:
         height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
 
         # Optional: Create a video writer to save the output
-        output_file = 'output_video.avi'
+        output_file = '../output_video.avi'
         fourcc = cv2.VideoWriter_fourcc(*'XVID')
         out = cv2.VideoWriter(output_file, fourcc, fps, (width, height))
 

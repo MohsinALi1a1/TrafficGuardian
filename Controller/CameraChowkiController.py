@@ -6,54 +6,69 @@ class CameraChowkiController:
     @staticmethod
     def get_all_camera(place_name ,direction_name):
         place = db.session.query(Place).filter(Place.name == place_name).first()
+        if not place:
+            return {"error": f"Specified Place {place_name} not exist"},404
         direction = db.session.query(Direction).filter(Direction.name == direction_name , Direction.place_id==place.id).first()
-        if not place or not direction:
-            return []  # Return an empty list if the place doesn't exist
+        if  not direction:
+            return {"error": f"Specified Direction {direction_name} on Place {place_name} not exist "} ,404
         cameras = db.session.query(Camera).filter(Camera.direction_id == direction.id).all()
-        return [{'id': camera.id, 'name': camera.name, 'place_name': place_name ,'direction' : direction.name ,'Type' : camera.type} for camera in cameras]
+        return [{'id': camera.id, 'name': camera.name, 'place_name': place_name ,'direction' : direction.name ,'Type' : camera.type} for camera in cameras],200
     
     @staticmethod
     def get_camera_by_id(ID):
-        camera = Camera.query.get_or_404(ID)
+        camera = Camera.query.get(ID)
+        if not camera:
+            return {"error": "Invalid Camera ID "},409
         direction= Direction.query.get_or_404(camera.direction_id)
         if camera:
-            return {'id': camera.id, 'name': camera.name, 'Camera Type': camera.type , "Direction" : direction.name}
+            return {'id': camera.id, 'name': camera.name, 'Camera Type': camera.type , "Direction" : direction.name},200
         else:
-            return {"error": "Camera not found"}
+            return {"error": "Camera not found"},404
 
 
     @staticmethod
     def get_camera_by_name(camera_name):
-        camera = db.session.query(Camera).filter(Camera.name == camera_name)
-        direction = Direction.query.get_or_404(camera.direction_id)
-        if camera:
-            return {'id': camera.id, 'name': camera.name, 'Camera Type': camera.type, "Direction": direction.name}
+
+        cameras = db.session.query(Camera).filter(Camera.name == camera_name).all()
+
+        if cameras:
+            direction_ids = {camera.direction_id for camera in cameras}
+            directions = {direction.id: direction.name for direction in Direction.query.filter(Direction.id.in_(direction_ids)).all()}
+
+            camera_info = [{ 'id': camera.id,'name': camera.name,'camera_type': camera.type,'direction': directions.get(camera.direction_id, "Unknown direction")}for camera in cameras]
+
+            return camera_info, 200
         else:
-            return {"error": " Camera  not found"}
-
-
-
+            return {"error": "Camera not found"}, 404
 
     @staticmethod
     def add_camera(name, direction_name,camera_type):
         direction = db.session.query(Direction).filter(Direction.name == direction_name).first()
         if not direction:
             return {"error": f"Direction {direction_name} not found "}, 404
-        new_camera = Camera(name=name, direction_id=direction.id,type=camera_type)
-        db.session.add(new_camera)
-        db.session.commit()
-        return {'Sucessfully': f'camera {name} is Sucessfully install  on  Direction{direction_name}'}
+        if camera_type  == 'front' or camera_type  == 'side':
+            new_camera = Camera(name=name, direction_id=direction.id,type=camera_type)
+            db.session.add(new_camera)
+            db.session.commit()
+            return {'Sucessfully': f'camera {name} is Sucessfully install  on  Direction {direction_name}'},200
+        else:
+            return {"error": f"Camera type  {camera_type} is invalid "}, 409
 
     @staticmethod
     def delete_camera(camera_name, direction_name,camera_type):
         # Fetch the Camera  by name
         direction = db.session.query(Direction).filter(Direction.name == direction_name).first()
-        camera= db.session.query(Camera).filter(Camera.name == camera_name,Camera.direction_id==direction.id , Camera.type==camera_type).first()
-        if not direction or not camera:
-            return {"error": f"Camera not exsistin Direction {direction_name}  "}, 404
-        db.session.delete(camera)
-        db.session.commit()
-        return {'Successfully': f'{camera_name} is successfully deleted'}, 201
+        if not direction:
+            return {"error": f"Direction {direction_name} not found "}, 404
+        if camera_type == 'front' or camera_type == 'side':
+            camera= db.session.query(Camera).filter(Camera.name == camera_name,Camera.direction_id==direction.id , Camera.type==camera_type).first()
+            if  not camera:
+                return {"error": f"Camera not exsist in Direction {direction_name}  "}, 404
+            db.session.delete(camera)
+            db.session.commit()
+            return {'Successfully': f'{camera_name} is successfully deleted'}, 201
+        else:
+            return {"error": f"Camera type  {camera_type} is invalid "}, 409
 ##################################################Chowki#############################################################################
 
     @staticmethod
@@ -61,27 +76,33 @@ class CameraChowkiController:
         place = db.session.query(Place).filter(Place.name == place_name).first()
 
         if not place:
-            return []  # Return an empty list if the place doesn't exist
+            return {"error": f"Specified Place {place_name} is Invalid "},409  # Return an empty list if the place doesn't exist
         chowkis = db.session.query(Chowki).filter(Chowki.place_id == place.id).all()
-        return [{'id': chowki.id, 'name': chowki.name, 'place_name': place_name, } for chowki in chowkis]
+        if chowkis:
+            return [{'id': chowki.id, 'name': chowki.name, 'place_name': place_name, } for chowki in chowkis],200
+        else:
+            return {"error": f"No Naka exist on Specified Place {place_name}"}, 404
 
     @staticmethod
     def get_chowki_by_id(ID):
-        chowki = Chowki.query.get_or_404(ID)
+        chowki = Chowki.query.get(ID)
 
         if chowki:
-            return {'id': chowki.id, 'name': chowki.name, 'Place' : chowki.place_id }
+            return {'id': chowki.id, 'name': chowki.name, 'Place' : chowki.place_id },200
         else:
-            return {"error": "Chowki not found"}
+            return {"error": "Invalid Chowki ID "},409
 
     @staticmethod
     def get_chowki_by_name(chowki_name):
         chowki = db.session.query(Chowki).filter(Chowki.name == chowki_name).first()
 
         if chowki:
-            return {'id': chowki.id, 'name': chowki.name, 'Place' : chowki.place_id }
+            place = db.session.query(Place).filter(Place.id == chowki.place_id).first()
+            if not place:
+                return {"error": " chowki Place is deleted "}, 404
+            return {'id': chowki.id, 'name': chowki.name, 'Place ' : place.name  },200
         else:
-            return {"error": " Chowki  not found"}
+            return {"error": " Chowki  not found"},404
 
 
     @staticmethod
@@ -89,26 +110,31 @@ class CameraChowkiController:
         place = db.session.query(Place).filter(Place.name == place_name).first()
         if not place:
             return {"error": f"Place {place_name} not found "}, 404
+
         new_chowki = Chowki(name=name, place_id=place.id)
         db.session.add(new_chowki)
         db.session.commit()
-        return {'Sucessfully': f'Chowki {name} is Sucessfully added at Location {place_name}'}
+        return {'Sucessfully': f'Chowki {name} is Sucessfully added at Location {place_name}'},200
 
     @staticmethod
     def delete_chowki(name, place_name):
         # Fetch the Chowki  by name
         place= db.session.query(Place).filter(Place.name == place_name).first()
+        if not place:
+            return {"error": f"Place : {place_name} Is Not Valid"}, 404
         chowki = db.session.query(Chowki).filter(Chowki.name == name,Chowki.place_id==place.id).first()
-
-        if not place or not chowki:
-            return {"error": f"Chowki : {chowki} not exist at  Place   : {place_name}    "}, 404
+        if  not chowki:
+            return {"error": f"Chowki : {chowki} not exist at  Place : {place_name} "}, 404
         db.session.delete(chowki)
         db.session.commit()
         return {'Successfully': f'{chowki.name} is successfully deleted'}, 201
+##########################################Warden Chowki###########################################################
 
     def get_all_Chowki_bycity(city_name):
         # Query the city to get its ID
         city = db.session.query(City).filter(City.name == city_name).first()
+        if not city:
+            return {'error':'Cityname  Is Invalid'},409
 
 
         # Query to get chowkis related to the city
@@ -141,7 +167,7 @@ class CameraChowkiController:
                 # 'linked_cameras': row.linked_cameras
             })
 
-        return result_list
+        return result_list,200
 
     ##################################################CameraChowki#############################################################################
 
@@ -149,7 +175,7 @@ class CameraChowkiController:
     def get_all_ChowkiCamera_byplace(place_name):
         place = db.session.query(Place).filter(Place.name == place_name).first()
         if  not place:
-            return []
+            return {'error':'Place is Invlaid'},409
 
         results = (
             db.session.query(
@@ -165,7 +191,7 @@ class CameraChowkiController:
             .join(CameraChowki, CameraChowki.chowki_id == Chowki.id)
             .join(Camera, Camera.id == CameraChowki.camera_id)
             .group_by(City.name, Place.name, Chowki.id, Chowki.name)
-            .filter(Place.name == place_name)  # Replace with the actual city name
+            .filter(Place.name == place_name)
             .all()
         )
 
@@ -184,13 +210,13 @@ class CameraChowkiController:
                 'chowki_name': chowki_name,
                 'linked_cameras': linked_cameras
             })
-        return result_list
+        return result_list,200
 
     @staticmethod
     def get_all_ChowkiCamera_bycity(city_name):
         city = db.session.query(City).filter(City.name == city_name).first()
         if not city:
-            return []
+            return {'error':'City name is Invalid'},409
 
         results = (
             db.session.query(
@@ -206,7 +232,7 @@ class CameraChowkiController:
             .join(CameraChowki, CameraChowki.chowki_id == Chowki.id)
             .join(Camera, Camera.id == CameraChowki.camera_id)
             .group_by(City.name, Place.name, Chowki.id, Chowki.name)
-            .filter(City.name == city_name)  # Replace with the actual city name
+            .filter(City.name == city_name)
             .all()
         )
 
@@ -225,7 +251,7 @@ class CameraChowkiController:
                 'chowki_name': chowki_name,
                 'linked_cameras': linked_cameras
             })
-        return result_list
+        return result_list,200
 
 
 
@@ -234,7 +260,7 @@ class CameraChowkiController:
 
         chowki = db.session.query(Chowki).filter(Chowki.name == chowki_name).first()
         if not chowki:
-            return []
+            return {'error':'Chowki Not found '},404
 
         results = (
             db.session.query(
@@ -260,14 +286,14 @@ class CameraChowkiController:
                 'camera_type': row.camera_type
             })
 
-        return result_list
+        return result_list,200
 
     @staticmethod
     def get_all_linkChowki_with_Camera(camera_name):
 
         camera = db.session.query(Camera).filter(Camera.name == camera_name).first()
         if not camera:
-            return []
+            return {'error':f'Camera {camera_name}is not Found '},404
 
         results = (
             db.session.query(
@@ -293,7 +319,7 @@ class CameraChowkiController:
                 'camera_type': row.camera_type
             })
 
-        return result_list
+        return result_list,200
 
 
     def link_camera_to_chowki(chowki_name, camera_list):
@@ -301,7 +327,7 @@ class CameraChowkiController:
         chowki = db.session.query(Chowki).filter(Chowki.name == chowki_name).first()
 
         if not chowki:
-            return f"Chowki '{chowki_name}' not found."
+            return f"Chowki '{chowki_name}' not found.",404
 
         linked_cameras = []
         not_found_cameras = []
@@ -323,9 +349,9 @@ class CameraChowkiController:
 
         if not_found_cameras:
             return (f"Successfully linked cameras {linked_cameras} to chowki '{chowki_name}'. "
-                    f"However, the following cameras were not found: {not_found_cameras}.")
+                    f"However, the following cameras were not found: {not_found_cameras}.") ,201
 
-        return f"Successfully linked cameras {linked_cameras} to chowki '{chowki_name}'."
+        return f"Successfully linked cameras {linked_cameras} to chowki '{chowki_name}'." ,201
 
 
 
@@ -335,7 +361,7 @@ class CameraChowkiController:
         chowki = db.session.query(Chowki).filter(Chowki.name == chowki_name).first()
 
         if not chowki:
-            return f"Chowki '{chowki_name}' not found."
+            return f"Chowki '{chowki_name}' not found.",404
 
         unlinked_cameras = []
         not_found_cameras = []
@@ -365,9 +391,9 @@ class CameraChowkiController:
 
         if not_found_cameras:
             return (f"Successfully unlinked cameras {unlinked_cameras} from chowki '{chowki_name}'. "
-                    f"However, the following cameras were not found: {not_found_cameras}.")
+                    f"However, the following cameras were not found: {not_found_cameras}."),201
 
-        return f"Successfully unlinked cameras {unlinked_cameras} from chowki '{chowki_name}'."
+        return f"Successfully unlinked cameras {unlinked_cameras} from chowki '{chowki_name}'.",201
 
 
 
@@ -377,7 +403,7 @@ class CameraChowkiController:
         chowki = db.session.query(Chowki).filter(Chowki.name == chowki_name).first()
 
         if not chowki:
-            return f"Chowki '{chowki_name}' not found."
+            return f"Chowki '{chowki_name}' not found." ,404
 
         # Unlink cameras from the chowki
         unlinked_cameras = []
@@ -438,6 +464,6 @@ class CameraChowkiController:
         if not_found_cameras:
             response.append(f"The following cameras were not found: {', '.join(set(not_found_cameras))}")
 
-        return " ".join(response) if response else "No changes made."
+        return " ".join(response) if response else "No changes made." , 200
 
 

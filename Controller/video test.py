@@ -19,7 +19,7 @@ if not cap.isOpened():
 frame_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
 frame_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
 fps = int(cap.get(cv2.CAP_PROP_FPS))
-out = cv2.VideoWriter('output_video.avi', cv2.VideoWriter_fourcc(*'XVID'), fps, (frame_width, frame_height))
+out = cv2.VideoWriter('../output_video.avi', cv2.VideoWriter_fourcc(*'XVID'), fps, (frame_width, frame_height))
 
 # Process the video frame by frame
 while True:

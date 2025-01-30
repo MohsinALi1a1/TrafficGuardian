@@ -9,25 +9,29 @@ class LocationController:
 
     @staticmethod
     def get_city_name_by_id(ID):
-        city = City.query.get_or_404(ID)
-        return city.name
+
+        city = City.query.get(ID)
+        if not city:
+            return (f"City with ID {ID} not found"),404
+        return city.name ,200
 
 
     @staticmethod
     def get_city_by_id(ID):
-        city = City.query.get_or_404(ID)
+        city = City.query.get(ID)
+
         if city:
-            return {'id':city.id ,'name':city.name }
+            return {'id':city.id ,'name':city.name },200
         else:
-            return {"error": "City not found"}
+            return {"error": "City not found"},404
 
     @staticmethod
     def get_city_by_name(city_name):
         city = db.session.query(City).filter(City.name == city_name).first()
         if city:
-            return {'id': city.id, 'name': city.name}
+            return {'id': city.id, 'name': city.name},200
         else:
-            return {"error": "City not found"}
+            return {"error": "City not found"},404
 
     @staticmethod
     def add_city(city_name):
@@ -40,7 +44,7 @@ class LocationController:
         db.session.add(new_city)
         db.session.commit()
         print(new_city.id ,new_city.name)
-        return {'Sucessfully':f'{new_city} is SucessFully Added'}
+        return {'Sucessfully':f'{new_city} is SucessFully Added'},200
 
     @staticmethod
     def delete_city(city_name):
@@ -82,38 +86,44 @@ class LocationController:
 
     @staticmethod
     def get_place_by_id(ID):
-        place = Place.query.get_or_404(ID)
+        place = Place.query.get(ID)
         if place:
-            return {'id':place.id ,'name':place.name ,'city_id':place.city_id}
+            return {'id':place.id ,'name':place.name ,'city_id':place.city_id},200
         else:
-            return {"error": "Place not found"}
+            return {"error": "Place not found"},404
 
     @staticmethod
     def get_place_by_name(place_name):
-        place = db.session.query(Place).filter(Place.name == place_name)
+        place = db.session.query(Place).filter(Place.name == place_name).all()
         if place:
-            return [{'id':pl.id ,'name':pl.name ,'city_id':pl.city_id}for pl in place]
+            return [{'id':pl.id ,'name':pl.name ,'city_id':pl.city_id}for pl in place],200
         else:
-            return {"error": "Place not found"}
+            return {"error": "Place not found"},404
 
     @staticmethod
     def add_place(city_name , place_name):
         place = db.session.query(Place).filter(Place.name == place_name)
-        city= LocationController.get_city_by_name(city_name)
+        city,code= LocationController.get_city_by_name(city_name)
+
+        if code==404:
+            return {"error": f"City {city_name} Not exist "}, 409
         if place :
             for pl in place:
                  if (pl.city_id == city['id']):
-                    return {"error": f"Place {place_name} Already exist in City {city_name}"}
+                    return {"error": f"Place {place_name} Already exist in City {city_name}"},409
+
         # Create place instance
         new_place = Place(name=place_name,city_id=city['id'])
         db.session.add(new_place)
         db.session.commit()
-        return {'Sucessfully':f'{place_name} is SucessFully Added in City {city_name}'}
+        return {'Sucessfully':f'{place_name} is SucessFully Added in City {city_name}'},200
 
     @staticmethod
     def delete_place(city_name,place_name):
         # Fetch the place by name
-        city= LocationController.get_city_by_name(city_name)
+        city,code= LocationController.get_city_by_name(city_name)
+        if code==404:
+            return {"error": f"City {city_name} Not exist "}, 409
         place = db.session.query(Place).filter(Place.name == place_name, Place.city_id==city['id']).first()
         if not place:
             return {"error": f"place {place_name} not found in City {city_name}"}, 404
@@ -141,19 +151,19 @@ class LocationController:
     def get_all_Directions(place_name):
         place = db.session.query(Place).filter(Place.name == place_name).first()
         if not place:
-            return []  # Return an empty list if the place doesn't exist
+            return [{"error": f"Specified Place {place_name} doesnot exist"} ],404
         directions=db.session.query(Direction).filter(Direction.place_id == place.id).all()
-        return [{'id':direction.id ,'name':direction.name ,'place_name':place_name}for direction in directions]
+        return [{'id':direction.id ,'name':direction.name ,'place_name':place_name}for direction in directions],200
 
 
 
     @staticmethod
     def get_direction_by_id(ID):
-        direction = Direction.query.get_or_404(ID)
+        direction = Direction.query.get(ID)
         if direction:
-            return {'id':direction.id ,'name':direction.name ,'place_id':direction.place_id}
+            return [{'id':direction.id ,'name':direction.name ,'place_id':direction.place_id}],200
         else:
-            return {"error": "Direction not found"}
+            return [{"error": "Direction not found"}],404
 
 
 
@@ -161,9 +171,10 @@ class LocationController:
     def get_direction_by_name(direction_name):
         directions = db.session.query(Direction).filter(Direction.name == direction_name).all()
         if directions:
-            return [{'id':direction.id , 'name':direction.name , 'place_id':direction.place_id} for direction in directions]
+            return [{'id':direction.id , 'name':direction.name , 'place_id':direction.place_id} for direction in directions],200
         else:
-            return {"error": "Direction  not found"}
+            return [{"error": "Direction  not found"}],404
+
 
     @staticmethod
     def add_direction(place_name, direction_name):
@@ -173,17 +184,19 @@ class LocationController:
         if direction:
             for dir in direction:
                 if (dir.place_id == place.id):
-                    return {"error": f"Direction {direction_name} Already exist in Place {place_name}"}
+                    return {"error": f"Direction {direction_name} Already exist in Place {place_name}"},409
         # Create place instance
         new_direction = Direction(name=direction_name, place_id=place.id)
         db.session.add(new_direction)
         db.session.commit()
-        return {'Sucessfully': f'{direction_name} is SucessFully Added in place {place_name}'}
+        return {'Sucessfully': f'{direction_name} is SucessFully Added in place {place_name}'},200
 
     @staticmethod
     def delete_direction(place_name, direction_name):
         # Fetch the place by name
         place = db.session.query(Place).filter(Place.name == place_name).first()
+        if not place:
+            return {"error": f" place {place_name} not exist"}, 404
         direction= db.session.query(Direction).filter(Direction.name == direction_name, Direction.place_id == place.id).first()
         if not direction:
             return {"error": f"Direction {direction_name} not found in place {place_name}"}, 404

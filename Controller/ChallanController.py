@@ -200,7 +200,7 @@ class ChallanController:
     @staticmethod
     def add_violation_history_and_details(vehicle_id, date, location, status, imagepath, camera_id, violation_ids):
         try:
-            # Validate inputs here if necessary
+
 
             violation_history = ViolationHistory(
                 vehicle_id=vehicle_id,
