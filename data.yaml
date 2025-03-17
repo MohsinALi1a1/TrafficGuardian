@@ -1,0 +1,9 @@
+path: C:/Users/92306/PycharmProjects/TrafficGuardian/Dataset # Root directory of your dataset
+train: Images/Train      # Training images directory
+val: Images/val          # Validation images directory
+
+names:
+  0: 'number_plate'      # Class for number plate
+  1: 'over_sitting'      # Class for over-sitting violation
+  2: 'no_helmet'         # Class for no helmet violation
+  3: 'missing_side_mirror' # Class for missing side mirror violation
