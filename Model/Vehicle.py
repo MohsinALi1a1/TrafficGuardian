@@ -4,6 +4,7 @@
 #     vehicletype VARCHAR(50) NOT NULL
 # );
 
+
 from Model.Configure import  db
 
 

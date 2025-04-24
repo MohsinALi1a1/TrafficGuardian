@@ -27,6 +27,7 @@ class TrafficWarden(db.Model):
     password=db.Column(db.String(255), nullable=False)
     mobile_number = db.Column(db.String(15), unique=True, nullable=False)
     image_path=db.Column(db.String(255) ,nullable=True)
+    PermissionType = db.Column(db.Integer, default=1)
     city_id = db.Column(db.Integer, db.ForeignKey('City.id'))
 
     # Relationship with City

@@ -14,5 +14,6 @@ from Model.Vehicle import Vehicle
 from Model.ViolationHistory import ViolationHistory
 from Model.ViolationDetails import ViolationDetails
 from Model.Challan import Challan
+from Model.ViolationImages import ViolationImages
 from Model.ChallanViolations import ChallanViolations
 from Model.Configure import db,app

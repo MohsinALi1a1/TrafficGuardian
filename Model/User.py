@@ -3,8 +3,11 @@
 #     name VARCHAR(255) NOT NULL,
 #     cnic VARCHAR(20) NOT NULL UNIQUE,
 #     mobilenumber VARCHAR(15) NOT NULL,
-#     email VARCHAR(255)
+#     email VARCHAR(255),
+#     password VARCHAR(255) NOT NULL,
+#     profile_image VARCHAR(255)
 # );
+#
 
 from Model.Configure import  db
 
@@ -15,6 +18,8 @@ class User(db.Model):
     name = db.Column(db.String(255), nullable=False)
     cnic = db.Column(db.String(20), nullable=False, unique=True)
     mobilenumber = db.Column(db.String(15), nullable=False)
-    email = db.Column(db.String(255))
+    email = db.Column(db.String(255),nullable=False)
+    password=db.Column(db.String(255),nullable=False)
+    profile_image=db.Column(db.String(255))
 
-    challans = db.relationship('Challan', back_populates='user')
+

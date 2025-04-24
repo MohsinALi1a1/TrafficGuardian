@@ -6,6 +6,8 @@
 #     FOREIGN KEY (violation_id) REFERENCES Violation(id) ON DELETE CASCADE  -- Ensure this references a Violation table
 # );
 
+
+
 from Model.Configure import  db
 
 class ViolationDetails(db.Model):

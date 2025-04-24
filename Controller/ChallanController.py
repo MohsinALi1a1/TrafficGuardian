@@ -1,6 +1,18 @@
+
+
+import Controller
+from Controller import CameraChowkiController, OCR, ImageControllerAndNotification
 from Model import User, Vehicle, db, Violation, ViolationFine, ViolationHistory, ViolationDetails, Challan, \
-    ChallanViolations
+    ChallanViolations, ViolationImages
 from sqlalchemy.exc import SQLAlchemyError
+from datetime import datetime
+import cv2
+import io
+import os
+from PIL import Image
+from Model.Configure import app
+from flask import  request ,jsonify
+import re
 
 class ChallanController:
     #################################  Vehicle ########################################################
@@ -123,8 +135,10 @@ class ChallanController:
             'id': violation.id,
             'name': violation.name,
             'description': violation.description,
-            'fines': [{'id': fine.id, 'created_date': fine.created_date, 'fine': float(fine.fine)} for fine in
-                      violation.violation_fines]
+            'limitValue':violation.limit_value,
+            'status':violation.status,
+            'fines': [{'id': fine.id, 'created_date': fine.created_date,'violation_id':violation.id, 'active':fine.active,'fine': float(fine.fine)} for fine in
+                      violation.violation_fines if fine.active == 1]
         } for violation in violations]
 
     @staticmethod
@@ -134,18 +148,22 @@ class ChallanController:
             'id': violation.id,
             'name': violation.name,
             'description': violation.description,
-            'fines': [{'id': fine.id, 'created_date': fine.created_date, 'fine': float(fine.fine)} for fine in
-                      violation.violation_fines]
+            'limitValue': violation.limit_value,
+            'status': violation.status,
+            'fines': [{'id': fine.id, 'created_date': fine.created_date,'violation_id':violation.id,'active':fine.active, 'fine': float(fine.fine)} for fine in
+                      violation.violation_fines if fine.active == 1]
         }
 
     @staticmethod
-    def add_violation(name, description=None):
+    def add_violation(name, fine,description=None ,limitValue=-1 ):
         existing_violation = db.session.query(Violation).filter(Violation.name == name).first()
         if existing_violation:
             return {"error": "Violation already exists"}, 409
-        new_violation = Violation(name=name, description=description)
+        new_violation = Violation(name=name, description=description ,limit_value=limitValue)
         db.session.add(new_violation)
         db.session.commit()
+        created_date = datetime.today().strftime('%Y-%m-%d')
+        ChallanController.add_violation_fine(new_violation.id ,created_date,fine)
         return {'Successfully': f'Violation {new_violation.name} is successfully added'}
 
     @staticmethod
@@ -159,29 +177,76 @@ class ChallanController:
         return {'Successfully': f'Violation {violation.name} is successfully deleted'}, 201
 
     @staticmethod
-    def update_violation(violation_id, new_name=None, new_description=None):
+    def update_violation(violation_id, new_name=None, new_description=None, limit_value=None, fine=None):
         violation = db.session.query(Violation).get(violation_id)
 
         if not violation:
             return {"error": "Violation not found"}, 404
 
-        if new_name:
+        # Update basic violation details if provided
+        if new_name and violation.name != new_name:
             violation.name = new_name
-        if new_description:
+        if new_description and violation.description != new_description:
             violation.description = new_description
+        if limit_value and violation.limit_value != limit_value:
+            violation.limit_value = limit_value
 
-        db.session.commit()
-        return {"message": f"Violation updated successfully"}, 201
+        db.session.commit()  # Commit violation updates first
+
+        if fine:
+            # First, change the status of the old fine
+            status, code = ChallanController.update_violation_status(violation.id)
+
+            if code == 201:
+                # Once the old fine status is updated, add the new fine
+                created_date = datetime.today().strftime('%Y-%m-%d')
+                ChallanController.add_violation_fine(violation.id, created_date, fine)
+
+        return {"message": "Violation updated successfully"}, 200
 
     @staticmethod
-    def add_violation_fine(violation_name, created_date, fine):
-        violation = db.session.query(Violation).filter(Violation.name == violation_name).first()
+    def update_violations_status(violation_id,Status):
+        violation = db.session.query(Violation).get(violation_id)
+
         if not violation:
             return {"error": "Violation not found"}, 404
-        new_fine = ViolationFine(violation_id=violation.id, created_date=created_date, fine=fine)
+
+        # Update basic violation details if provided
+        if Status and violation.status != Status:
+            violation.status = Status
+
+
+        db.session.commit()  # Commit violation updates first
+
+
+        return {"message": "Violation updated successfully"}, 200
+
+    @staticmethod
+    def add_violation_fine(violation_id, created_date, fine):
+        violation = db.session.query(Violation).filter(Violation.id == violation_id).first()
+        if not violation:
+            return {"error": "Violation not found"}, 404
+        new_fine = ViolationFine(violation_id=violation.id, created_date=created_date, fine=fine ,active=1)
         db.session.add(new_fine)
+        db.session.flush()  # Ensures the object is registered before committing
         db.session.commit()
         return {'Successfully': f'Fine of {fine} added to violation {violation.name}'}
+
+    @staticmethod
+    def update_violation_status(violation_id):
+        fines = db.session.query(ViolationFine).filter(
+            ViolationFine.violation_id == violation_id and
+            ViolationFine.active == 1
+        ).all()
+
+        if not fines:
+            return {"error": "No active fines found"}, 404
+
+        for fine in fines:
+            fine.active = 0
+
+        db.session.commit()
+        return {'message': f'{len(fines)} fine(s) deactivated successfully'}, 201
 
     @staticmethod
     def delete_violation_fine(fine_id):
@@ -193,21 +258,44 @@ class ChallanController:
         db.session.commit()
         return {'Successfully': f'Fine {fine.id} deleted successfully'}, 201
 
+    @staticmethod
+    def get_violation_fine(violation_id):
+        fine = db.session.query(ViolationFine).filter(
+            (ViolationFine.violation_id == violation_id) & (ViolationFine.active == 1)
+        ).first()
 
+        if not fine:
+            return {"error": "Fine not found"}, 404
 
-#################################  ViolationsHistory & Its Details ########################################################
+        return {'fine': fine.fine}, 201
+
+    #################################  ViolationsHistory & Its Details ########################################################
+    @staticmethod
+    def update_violation_history_status(violation_history_id):
+        try:
+            violation_history = db.session.query(ViolationHistory).filter(ViolationHistory.id==violation_history_id).first()
+
+            if not violation_history:
+                return {"error": "ViolationHistory not found"}, 404
+
+            violation_history.violation_id = "Issue"
+            db.session.commit()
+
+            return {"message": "ViolationHistory status updated to 'Issue'"}, 200
+
+        except Exception as e:
+            db.session.rollback()
+            return {"error": f"Failed to update status: {str(e)}"}, 500
 
     @staticmethod
-    def add_violation_history_and_details(vehicle_id, date, location, status, imagepath, camera_id, violation_ids):
+    def add_violation_history_and_details(vehicle_id,  location, status, camera_id, violation_ids,image_list):
         try:
             # Validate inputs here if necessary
 
             violation_history = ViolationHistory(
                 vehicle_id=vehicle_id,
-                date=date,
                 location=location,
                 status=status,
-                imagepath=imagepath,
                 camera_id=camera_id
             )
 
@@ -224,6 +312,32 @@ class ChallanController:
             db.session.commit()
 
             print("Violation history and details added successfully.")
+            save_imag_path_list= ChallanController.save_images(image_list,violation_history.id)
+            for path in save_imag_path_list:
+                violation_images = ViolationImages(
+                    violation_id=violation_history.id,
+                    image_path=path
+                )
+                db.session.add(violation_images)
+
+            db.session.commit()
+
+            # Get on-duty wardens for the camera
+            wardens = CameraChowkiController.get_on_duty_wardens(camera_id)
+
+            # Check if any wardens were found
+            if not wardens:
+                print(f"No on-duty wardens found for camera_id={camera_id}")
+            else:
+                for warden in wardens:
+                    response =Controller.ImageControllerAndNotification.add_notification(
+                        recipient_type="TrafficWarden",
+                        recipient_id=warden.id,
+                        type_="Violation Alert",
+                        message="🚨 A violation has been detected in your assigned area. Please review and take action."
+                    )
+                    print(f"🔔 Notification sent to Warden ID: {warden.id}")
+
             return {
                 "successfully": "Violation history and details added successfully",
                 "violation_history_id": violation_history.id
@@ -238,21 +352,61 @@ class ChallanController:
             }, 500
 
     @staticmethod
-    def get_violation_history_with_details(vehicle_id=None, date=None, camera_id=None):
+    def save_images(image_list, violation_id, base_name="bike"):
+        # Create folder like Predictions/saved_images1 (if violation_id is 1)
+        save_folder = os.path.join("Predictions", f"saved_images{violation_id}")
+        os.makedirs(save_folder, exist_ok=True)
+
+        saved_paths = []
+
+        for idx, image in enumerate(image_list, start=1):
+            # Generate file name
+            filename = f"{violation_id}_{base_name}_{idx}.jpg"
+
+            # Full save path
+            save_path = os.path.join(save_folder, filename)
+
+            # Save the image
+            image.save(save_path)
+
+            # Get only the path from 'saved_imagesX/filename.jpg'
+            relative_path = os.path.relpath(save_path, start="Predictions")
+            clean_path = relative_path.replace("\\", "/")
+
+            # Append to saved paths list
+            saved_paths.append(clean_path)
+
+        return saved_paths
+
+    @staticmethod
+    def get_violation_history_with_details(naka_id,vehicle_id=None, date=None ):
         try:
+            cameras_ids=[]
             query = (
                 db.session.query(ViolationHistory)
                 .join(ViolationDetails)
             )
 
-            if vehicle_id:
-                query = query.filter(ViolationHistory.vehicle_id == vehicle_id)
-            if date:
-                query = query.filter(ViolationHistory.date == date)
-            if camera_id:
-                query = query.filter(ViolationHistory.camera_id == camera_id)
 
-            violation_histories = query.all()
+            if(naka_id):
+               camera_list= CameraChowkiController.get_all_linkCamera_with_Chowkibyid(naka_id)
+               if camera_list is not None and len(camera_list) > 0:
+                   # Loop through the camera_list and populate the data
+                   for camera in camera_list:
+                       cameras_ids.append(camera['camera_id'])
+                   if vehicle_id:
+                       query = query.filter(ViolationHistory.vehicle_id == vehicle_id)
+                   if date:
+                       query = query.filter(ViolationHistory.date == date)
+                   if cameras_ids:
+                       query = query.filter(ViolationHistory.camera_id.in_(cameras_ids))
+                       violation_histories = query.all()
+
+               else:
+                   violation_histories = []
+                   print("No cameras found for this naka_id.")
+
+
 
             if not violation_histories:
                 return {"message": "No violation records found."}
@@ -266,13 +420,17 @@ class ChallanController:
                     }
                     for detail in history.violation_details
                 ]
+
+                vehicle= ChallanController.get_vehicle_by_id(history.vehicle_id)
+
                 result.append({
                     "id": history.id,
                     "vehicle_id": history.vehicle_id,
-                    "date": history.date,
+                    "licenseplate":vehicle['licenseplate'],
+                    "vehicletype":vehicle['vehicletype'],
+                    "violation_datetime": history.violation_datetime,
                     "location": history.location,
                     "status": history.status,
-                    "imagepath": history.imagepath,
                     "camera_id": history.camera_id,
                     "violation_details": violation_details
                 })
@@ -393,11 +551,14 @@ class ChallanController:
 #################################  Challan & Its Details ########################################################
     @staticmethod
     def add_challan_history_and_details(date, status, violation_ids, violation_history_id,
-                                        user_id, warden_id, fine_amount):
+                                        violator_cnic,violator_name,mobile_number,vehicle_number, warden_id, fine_amount):
         try:
             new_challan = Challan(
                 violation_history_id=violation_history_id,
-                user_id=user_id,
+                violator_cnic=violator_cnic,
+                violator_name=violator_name,
+                mobile_number=mobile_number,
+                vehicle_number=vehicle_number,
                 warden_id=warden_id,
                 challan_date=date,
                 fine_amount=fine_amount,
@@ -408,14 +569,17 @@ class ChallanController:
             db.session.flush()  # Flush to get the new challan ID before committing
 
             for violation_id in violation_ids:
-                new_challan_violation = ChallanViolations(
-                    challan_id=new_challan.id,
-                    violation_id=violation_id
-                )
-                db.session.add(new_challan_violation)
+               fine,code= ChallanController.get_violation_fine(violation_id)
+               if code==201:
+                    new_challan_violation = ChallanViolations(
+                        challan_id=new_challan.id,
+                        violation_id=violation_id,
+                        fine=fine['fine']
+                    )
+                    db.session.add(new_challan_violation)
 
             db.session.commit()
-
+            ChallanController.update_violation_history_status(violation_id)
             return True, new_challan.id
 
         except Exception as exp:
@@ -424,70 +588,81 @@ class ChallanController:
             return False, None  # Return failure and no ID
 
     @staticmethod
-    def get_challans(challan_id=None, user_id=None, warden_id=None):
+    def get_challans(challan_id=None, violator_cnic=None, warden_id=None):
         try:
             query = db.session.query(Challan)
 
             if challan_id:
-
                 challan = query.filter_by(id=challan_id).first()
                 if challan is None:
                     return False, "Challan not found"
 
-
                 challan_details = db.session.query(ChallanViolations).filter(
                     ChallanViolations.challan_id == challan.id).all()
 
-                violation_names = []
-                for violation in challan_details:
-                    violation_name = db.session.query(Violation.name).filter(
-                        Violation.id == violation.violation_id).scalar()
-                    if violation_name:
-                        violation_names.append({"violation": violation_name})
+                violation_list = []
+
+                for detail in challan_details:
+                    violation = ChallanController.get_violation_by_id(detail.violation_id)
+                    if violation and violation['fines']:
+                        active_fine = violation['fines'][0]['fine']
+                        violation_list.append({
+                            "violation": violation['name'],
+                            "fine": active_fine
+                        })
 
                 return True, {
                     "challan": {
                         "id": challan.id,
                         "violation_history_id": challan.violation_history_id,
-                        "user_id": challan.user_id,
+                        "violator_name": challan.violator_name,
+                        "violator_cnic": challan.violator_cnic,
+                        "mobile_number": challan.mobile_number,
+                        "vehicle_number": challan.vehicle_number,
                         "warden_id": challan.warden_id,
                         "challan_date": challan.challan_date,
                         "fine_amount": challan.fine_amount,
                         "status": challan.status,
-                        "violation_names": violation_names
+                        "violation_details": violation_list
                     }
                 }
 
-
-            if user_id:
-                query = query.filter_by(user_id=user_id)
+            # Filter by CNIC and/or WardenID if provided
+            if violator_cnic:
+                query = query.filter_by(violator_cnic=violator_cnic)
             if warden_id:
                 query = query.filter_by(warden_id=warden_id)
 
-
             challans = query.all()
             result = []
-            for challan in challans:
 
+            for challan in challans:
                 challan_details = db.session.query(ChallanViolations).filter(
                     ChallanViolations.challan_id == challan.id).all()
 
-                violation_names = []
-                for violation in challan_details:
-                    violation_name = db.session.query(Violation.name).filter(
-                        Violation.id == violation.violation_id).scalar()
-                    if violation_name:
-                        violation_names.append({"violation": violation_name})
+                violation_list = []
+
+                for detail in challan_details:
+                    violation = ChallanController.get_violation_by_id(detail.violation_id)
+                    if violation and violation['fines']:
+                        active_fine = violation['fines'][0]['fine']
+                        violation_list.append({
+                            "violation": violation['name'],
+                            "fine": active_fine
+                        })
 
                 result.append({
                     "id": challan.id,
                     "violation_history_id": challan.violation_history_id,
-                    "user_id": challan.user_id,
+                    "violator_name": challan.violator_name,
+                    "violator_cnic": challan.violator_cnic,
+                    "mobile_number": challan.mobile_number,
+                    "vehicle_number": challan.vehicle_number,
                     "warden_id": challan.warden_id,
                     "challan_date": challan.challan_date,
                     "fine_amount": challan.fine_amount,
                     "status": challan.status,
-                    "violation_names": violation_names  # Add violation names to each challan
+                    "violation_details": violation_list
                 })
 
             return True, result
@@ -515,3 +690,140 @@ class ChallanController:
             db.session.rollback()  # Rollback in case of an error
             print(f"Error while updating challan status: {exp}")
             return False, str(exp)
+
+    UPLOAD_FOLDER = 'uploads'
+    app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
+    # Ensure the upload folder exists
+    os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+    def autoviolationdetection_fromcameraimage(camera_images):
+        try:
+
+            if  camera_images:
+                image_list = []
+                for item in camera_images:
+                    cam_id = item['cam_id']
+                    image = item['image']
+
+                    # print(type(cam_id)) # Check Cameraid datatype
+                    # print(cam_id) # PRint the id for verification of data
+                    try:
+                        icam_id = int(cam_id) # Change the camera id str to int
+                        # print(type(icam_id))
+                    except ValueError:
+                        print("Invalid string for conversion")
+
+                    camera=CameraChowkiController.get_camera_by_id(cam_id)
+                    extracted_plate_text =""
+
+                    if 'error' not in camera:
+                        camera_location=camera.get('Direction')
+                        camera_type = camera.get('Camera Type')
+                        match camera_type:
+                            case "front":
+                                print("This is the front camera.")
+                                image_list.append(image)
+                                violations_and_plates=Controller.YoloController.detect_violations_from_frontImage(image)
+
+                                for i, item in enumerate(violations_and_plates):
+                                    print(f"\nResult Front #{i + 1}")
+                                    violations = item.get('violations', [])
+                                    cropped_plate = item.get('cropped_license_plate')
+
+                                    if violations:
+                                        print("Violations Detected:")
+                                        for violation in violations:
+                                            print(f" - {violation}")
+                                    else:
+                                        print("No violations detected.")
+
+                                    if cropped_plate is not None:
+
+                                        extracted_plate_text=Controller.OCR.NumberExtractor(cropped_plate)
+
+                                        image_list.append(image)
+                                        cv2.imshow(f"Cropped License Plate {i + 1}", cropped_plate)
+                                        cv2.waitKey(0)
+                                        cv2.destroyAllWindows()
+                                    else:
+                                        print("No license plate image found.")
+
+                            case "side":
+                                print("This is the side camera.")
+                                image_list.append(image)
+                                detectedviolations = Controller.YoloController.detect_violations_from_sideImage(image)
+                                for i, item in enumerate(detectedviolations):
+                                    print(f"\nResult Side #{i + 1}")
+                                    violations = item.get('violations', [])
+
+
+                                    if violations:
+                                        print("Violations Detected:")
+                                        for violation in violations:
+                                            print(f" - {violation}")
+                                    else:
+                                        print("No violations detected.")
+                            case _:
+                                print("Unknown camera type.")
+
+
+                bikenumber=extracted_plate_text
+                try:
+                    bike = ChallanController.get_vehicle_by_licenseplate(bikenumber)
+                    if 'error' in bike:
+                        message = ChallanController.add_vehicle(bikenumber, 'Bike')
+                        if 'Successfully' in message:
+                            bike = ChallanController.get_vehicle_by_licenseplate(bikenumber)
+                    print(bike['id'], "bike id")
+                except Exception as e:
+                    print(f"error in bike : {str(e)}")
+                    return jsonify({"message": f"An error occurred in getting Bike: {str(e)}"}), 500
+
+                print(bike)
+                status = 'Pending'
+                created_date = datetime.today().strftime('%Y-%m-%d')
+                print(cam_id, bikenumber, camera_location, status, created_date)
+                violations_ids = []
+                try:
+
+                    detection_fromfront = violations_and_plates[0]["violations"]
+                    print(detection_fromfront)
+                    detection_fromside = detectedviolations[0]["violations"]
+                    print(detection_fromside)
+                    for i in detection_fromfront:
+                        if i == 'Side Mirrors' and  "Side Mirrors" in detection_fromside:
+                            violations_ids.append(3)
+
+
+
+                    for i in detection_fromside:
+                        if i == 'Helmet':
+                            violations_ids.append(1)
+                        elif i.__contains__('Persons'):
+                            violations_ids.append(2)
+                except Exception as e:
+                    print(f"error in adding violation : {str(e)}")
+                    return jsonify({"message": f"An error occurred getting Violations: {str(e)}"}), 500
+
+                try:
+                    print(len(image_list))
+                    response, code = ChallanController.add_violation_history_and_details(bike['id'],
+                                                                                         camera_location, status,
+                                                                                         cam_id,
+                                                                                         violations_ids,image_list)
+
+                except Exception as e:
+                    print(f"error in add Violation History : {str(e)}")
+                    return jsonify({"message": f"An error occurred Add Violation History: {str(e)}"}), 500
+
+               # Return the result in JSON format
+                return response,200
+            else:
+                print("message File has no filename")
+                return jsonify({"message": "File has no filename"}), 400
+
+        except Exception as e:
+            # Handle exceptions that may occur
+            print(str(e))
+            return {"message": f"An error occurred: {str(e)}"}, 500
+

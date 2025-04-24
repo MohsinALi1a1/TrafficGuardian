@@ -3,14 +3,14 @@ import os
 from PIL import Image
 from datetime import datetime
 
-from sympy.codegen import Print
 
 from Model.Configure import app
-from flask import  request ,jsonify
-from Controller import LocationController, ChallanController
+from flask import  request ,jsonify, send_from_directory
+from Controller import LocationController, ChallanController, ImageControllerAndNotification
 from Controller import CameraChowkiController
 from Controller import WardenChowkiController
-from Controller import yolov8
+from Controller import YoloController
+
 
 
 ########################################  City  ############################################
@@ -554,6 +554,26 @@ def get_all_camera_with_chowki():
     except Exception as exp:
         return jsonify({'error': str(exp)}), 500
 
+
+@app.route('/linkcamerawithchowkibyid', methods=['POST'])
+def get_all_camera_with_chowkibyid():
+    try:
+        data = request.get_json()
+        chowki_id = data.get('chowki_id')
+
+        print(chowki_id )
+        if not chowki_id :
+            return jsonify({"error": "Chowki id  is required"}), 400
+
+        chowki_info = CameraChowkiController.get_all_linkCamera_with_Chowkibyid(chowki_id)
+
+        if not chowki_info:
+            return jsonify({"error": f" No Camera is linked for the specified Chowki {chowki_id}"}), 404
+
+        return jsonify(chowki_info),200
+    except Exception as exp:
+        return jsonify({'error': str(exp)}), 500
+
 @app.route('/linkchowkiwithcamera', methods=['GET'])
 def get_all_chowki_with_camera():
     try:
@@ -678,17 +698,19 @@ def add_shift():
         shift_starttime = data.get('starttime')
         shift_endtime = data.get('endtime')
 
+
         if not shift_name or not shift_starttime or not shift_endtime:
             return jsonify({"error": "Shift name, start time, and end time are required."}), 400
 
+        shift_name=shift_name.title()
         # Convert string times to time objects
         shift_starttime = datetime.strptime(shift_starttime, "%H:%M:%S").time()
         shift_endtime = datetime.strptime(shift_endtime, "%H:%M:%S").time()
 
         # Add the new shift
-        shift_response = WardenChowkiController.add_shift(shift_name, shift_starttime, shift_endtime)
+        shift_response,code = WardenChowkiController.add_shift(shift_name, shift_starttime, shift_endtime)
 
-        return jsonify(shift_response), 201
+        return jsonify(shift_response), code
     except ValueError as ve:
         return jsonify({'error': f'{ve}\nInvalid time format. Use HH:MM:SS. '}), 400
     except Exception as exp:
@@ -772,6 +794,7 @@ def get_warden_by_cnic():
         return jsonify({'error': str(exp)}), 500
 
 
+
 @app.route('/addtrafficwarden', methods=['POST'])
 def add_warden():
     try:
@@ -829,6 +852,31 @@ def update_warden_route():
         )
     except Exception as exp:
         return jsonify({'error': str(exp)}), 500
+
+
+@app.route('/wardenlogin', methods=['POST'])
+def wardenlogin():
+    try:
+        if not request.is_json:
+            return jsonify({"error": "Request must be in JSON format"}), 400
+
+        data = request.get_json()
+        badge = data.get('badge')
+        password = data.get('password')
+        print(badge)
+        print(password)
+
+        if not badge or not password:
+            return jsonify({"error": "Badge Number and Password are required"}), 400
+
+        response,code = WardenChowkiController.wardenlogincheck(badge, password)
+        print(response)
+        return jsonify(response), code
+
+    except Exception as exp:
+        print(str(exp))
+        return jsonify({'error': str(exp)}), 500
+
 ########################################  WardenChowki  ############################################
 
 @app.route('/wardenassignments', methods=['POST'])
@@ -837,6 +885,7 @@ def warden_assignments():
         duty=WardenChowkiController.create_duty_roster()
         return jsonify({"sucessfully":duty}),201
     except Exception as exp:
+        print(str(exp))
         return jsonify({'error': str(exp)}), 500
 
 
@@ -873,7 +922,7 @@ def get_all_dutyroster():
 def get_all_dutyroster_of_warden():
     try:
         data = request.get_json()
-        badge_number = data.get('badgenumber')
+        badge_number = data.get('badge')
         dutyroster_list = WardenChowkiController.get_dutyroster_for_warden(badge_number)
         print(dutyroster_list)
         return jsonify(dutyroster_list)
@@ -881,6 +930,16 @@ def get_all_dutyroster_of_warden():
         return jsonify({'error': str(exp)}), 500
 
 
+@app.route('/getassignjobofwardenbyid', methods=['POST'])
+def get_all_dutyroster_of_warden_byid():
+    try:
+        data = request.get_json()
+        id = data.get('id')
+        dutyroster_list = WardenChowkiController.get_dutyroster_for_warden_byid(id)
+        print(dutyroster_list)
+        return jsonify(dutyroster_list)
+    except Exception as exp:
+        return jsonify({'error': str(exp)}), 500
 
 ########################################  Vehicle  ############################################
 @app.route('/vehicle', methods=['GET'])
@@ -892,7 +951,7 @@ def get_all_vehicles():
         return jsonify({'error': str(exp)}), 500
 
 
-@app.route('/vehiclebyid', methods=['GET'])
+@app.route('/vehiclebyid', methods=['POST'])
 def get_vehicle_by_id():
     try:
         data = request.get_json()
@@ -1058,7 +1117,7 @@ def get_all_violations():
         return jsonify({'error': str(exp)}), 500
 
 
-@app.route('/violationsbyid', methods=['GET'])
+@app.route('/violationsbyid', methods=['POST'])
 def get_violation_by_id():
     try:
         data = request.get_json()
@@ -1080,13 +1139,16 @@ def add_violation():
         data = request.get_json()
         name = data.get('name')
         description = data.get('description')
+        limitValue=data.get('limitValue')
+        fine=data.get('fine')
 
-        if not name:
-            return jsonify({"error": "Violation name is required"}), 400
+        if not name and not fine:
+            return jsonify({"error": "Violation name and fine is required"}), 400
 
-        result = ChallanController.add_violation(name, description)
+        result = ChallanController.add_violation(name, fine,description ,limitValue )
         return jsonify(result), 201
     except Exception as exp:
+        print(str(exp))
         return jsonify({'error': str(exp)}), 500
 
 # Route to delete a violation by ID
@@ -1108,26 +1170,42 @@ def update_violation():
         violation_id=data.get('violation_id')
         new_name = data.get('new_name')
         new_description = data.get('new_description')
+        limit_value=data.get('newlimitValue')
+        fine=data.get('newfine')
 
-        result = ChallanController.update_violation(violation_id, new_name, new_description)
+        result = ChallanController.update_violation(violation_id, new_name, new_description ,limit_value,fine)
         return jsonify(result)
     except Exception as exp:
+        print(str(exp))
         return jsonify({'error': str(exp)}), 500
 
+@app.route('/updateviolationstatus', methods=['PUT'])
+def update_violation_status():
+    try:
+        data = request.get_json()
+        violation_id=data.get('violation_id')
+        Status = data.get('Status')
+
+
+        result,code = ChallanController.update_violations_status(violation_id,Status)
+        return jsonify(result),code
+    except Exception as exp:
+        print(str(exp))
+        return jsonify({'error': str(exp)}), 500
 ########################################  ViolationsFine  ############################################
 # Route to add a fine to a violation
 @app.route('/violationfine', methods=['POST'])
 def add_violation_fine():
     try:
         data = request.get_json()
-        violation_name=data.get('violation_name')
+        violation_id=data.get('violation_id')
         created_date = datetime.today().strftime('%Y-%m-%d')
         fine = data.get('fine')
 
-        if  not fine  or not violation_name:
+        if  not fine  or not violation_id:
             return jsonify({"error": "Violation_id and fine amount are required"}), 400
 
-        result = ChallanController.add_violation_fine(violation_name, created_date, fine)
+        result = ChallanController.add_violation_fine(violation_id, created_date, fine)
         return jsonify(result), 201
     except Exception as exp:
         return jsonify({'error': str(exp)}), 500
@@ -1166,17 +1244,21 @@ def create_violation():
         return jsonify({'error': str(exp)}), 500
 
 
-@app.route('/getviolationsrecord', methods=['GET'])
+@app.route('/getviolationsrecord_for_nakaid', methods=['POST'])
 def get_violation_records():
     try:
         data = request.json
+        chowki_id=data.get('chowki_id')
         vehicle_id = data.get('vehicle_id')
         date = data.get('date')
         camera_id = data.get('camera_id')
-        result = ChallanController.get_violation_history_with_details(vehicle_id, date, camera_id)
+        if not chowki_id:
+            return jsonify({"error":"Plz Pass Chowki ID"})
+        result = ChallanController.get_violation_history_with_details(chowki_id,vehicle_id, date)
         return jsonify(result)
     except Exception as exp:
         return jsonify({'error': str(exp)}), 500
+
 
 @app.route('/updateviolationsrecord', methods=['PUT'])
 def update_violation_records():
@@ -1216,19 +1298,22 @@ def create_challan():
         data = request.json
         violation_history_id = data.get('violation_history_id')
         violation_ids = data.get('violation_ids') #List
-        user_id = data.get('user_id')
+        violator_cnic = data.get('violator_cnic')
+        violator_name = data.get('violator_name')
+        mobile_number=data.get('mobile_number')
+        vehicle_number=data.get('vehicle_number')
         warden_id = data.get('warden_id')
         fine_amount = data.get('fine_amount')
         status = data.get('status')
 
-        if not all([violation_history_id, violation_ids, user_id, warden_id, fine_amount, status]):
+        if not all([violation_history_id, violation_ids, violator_cnic,violator_name,mobile_number,vehicle_number,warden_id, fine_amount, status]):
             return jsonify({"error": "Missing required fields"}), 400
 
 
         date =  datetime.now()  # Assuming you want to use the current UTC time for the date
 
         success, challan_id = ChallanController.add_challan_history_and_details(
-            date, status, violation_ids, violation_history_id, user_id, warden_id, fine_amount
+            date, status, violation_ids, violation_history_id,violator_cnic,violator_name,mobile_number,vehicle_number, warden_id, fine_amount
         )
 
         if success:
@@ -1240,7 +1325,7 @@ def create_challan():
         return jsonify({'error': str(exp)}), 500
 
 
-@app.route('/getchallans', methods=['GET'])
+@app.route('/getchallans', methods=['POST'])
 def retrieve_challans():
     try:
         data = request.json
@@ -1281,11 +1366,95 @@ def update_challan():
 #########################################################################################################################################
 
 # Specify the folder to save uploaded images
-UPLOAD_FOLDER = 'uploads'
+UPLOAD_FOLDER = os.path.join(os.getcwd(), 'Predictions')
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 # Ensure the upload folder exists
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+@app.route('/autoupload-image', methods=['POST'])
+def autoupload_image():
+    try:
+        # Check if the request contains a file
+        if 'image' not in request.files:
+            return "No image file provided", 400
+
+        file = request.files['image']
+        bikenumber = request.form.get('bikenumber')
+        text_value = request.form.get('camera_id')
+
+
+        # Read and open the image using PIL
+        if file.filename != '':
+            image = Image.open(io.BytesIO(file.read()))
+
+            # Save the image in the upload folder
+            file_path = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
+            image.save(file_path)
+            model_path = r'C:\Drive D\Pycharm\TrafficGuardian\yolov8mtrafficmodel.pt'
+            model_pathr= r'C:\Drive D\Pycharm\TrafficGuardian\yolov8s.pt'
+            preprocessed_image=YoloController.preprocess_image(image)
+
+            print("Preprocessed image shape:", preprocessed_image.shape)
+            violations_and_plates = YoloController.detect_violations_from_Image(file_path, model_path, model_pathr)
+
+            try:
+                camera = CameraChowkiController.get_camera_by_id(text_value)[0]
+                camera_location = camera['Direction']
+            except Exception as e:
+                return jsonify({"message": f"An error occurred in getting location: {str(e)}"}), 500
+
+
+
+            try:
+                bike = ChallanController.get_vehicle_by_licenseplate(bikenumber)
+                if 'error' in bike:
+                    message = ChallanController.add_vehicle(bikenumber, 'Bike')
+                    if 'Successfully' in message:
+                        bike = ChallanController.get_vehicle_by_licenseplate(bikenumber)
+                print(bike['id'], "bike id")
+            except Exception as e:
+                return jsonify({"message": f"An error occurred in getting Bike: {str(e)}"}), 500
+
+            print(bike)
+            status = 'Pending'
+            created_date = datetime.today().strftime('%Y-%m-%d')
+            print(text_value, bikenumber, camera_location, status, created_date)
+            violations_ids=[]
+            try:
+
+                detected_violations=violations_and_plates[0]["violations"]
+                print(detected_violations)
+
+                for i in detected_violations:
+                    if i == 'No Helmet':
+                        violations_ids.append(1)
+                    elif i == 'Side Mirror':
+                        violations_ids.append(3)
+                    elif i.__contains__('Oversitting'):
+                        violations_ids.append(2)
+
+            except Exception as e:
+                return jsonify({"message": f"An error occurred getting Violations: {str(e)}"}), 500
+
+            try:
+
+                 response, code = ChallanController.add_violation_history_and_details(bike['id'], created_date,
+                                                                                     camera_location, status,file_path,text_value,violations_ids)
+            except Exception as e:
+                return jsonify({"message": f"An error occurred Add Violation History: {str(e)}"}), 500
+
+            # Return the result in JSON format
+            return jsonify({
+                'message': 'Image uploaded and processed successfully',
+                'violations_and_plates': violations_and_plates
+            }), 200
+        else:
+            return jsonify({"message": "File has no filename"}), 400
+
+    except Exception as e:
+        # Handle exceptions that may occur
+        return jsonify({"message": f"An error occurred: {str(e)}"}), 500
 
 @app.route('/upload-image', methods=['POST'])
 def upload_image():
@@ -1304,9 +1473,9 @@ def upload_image():
             file_path = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
             image.save(file_path)
             model_path = r'C:\Users\Syed Mohsin Ali\PycharmProjects\TrafficGuardian\yolov8s.pt'
-            preprocessed_image=yolov8.preprocess_image(image)
+            preprocessed_image=YoloController.preprocess_image(image)
             print("Preprocessed image shape:", preprocessed_image.shape)
-            violations_and_plates = yolov8.detect_violations_from_Image(file_path, model_path)
+            violations_and_plates = YoloController.detect_violations_from_Image(file_path, model_path)
 
             # Return the result in JSON format
             return jsonify({
@@ -1320,7 +1489,147 @@ def upload_image():
         # Handle exceptions that may occur
         return jsonify({"message": f"An error occurred: {str(e)}"}), 500
 
-################################################################################################import os
+################################################################################################
+# Multi Camera Feed
+
+# In-memory image storage dictionary
+camera_images_list = [] # Format: [{'camera_id': image_file}]
+@app.route('/upload-multicameraimages', methods=['POST'])
+def upload_images():
+    indices_str = request.form.get('image_indices', '')
+    indices = indices_str.split(',') if indices_str else []
+
+    uploaded_info = []
+    camera_images_list = []  # Declare here
+
+    for i, image_file in enumerate(request.files.getlist('images')):
+        if i < len(indices):
+            camera_id = indices[i]
+        else:
+            camera_id = str(i)
+
+        if image_file.filename != '':
+            image = Image.open(io.BytesIO(image_file.read()))
+
+            camera_images_list.append({
+                "cam_id": camera_id,
+                "image": image  # Store actual image
+            })
+
+            uploaded_info.append({
+                'camera_id': camera_id,
+                'filename': image_file.filename,
+                'status': 'stored in memory'
+            })
+
+    # Call the detection function
+    response ,code=ChallanController.autoviolationdetection_fromcameraimage(camera_images_list)
+    return response,code
+    # return jsonify({
+    #     'message': 'Images received and stored in memory',
+    #     'uploaded': uploaded_info
+    # })
+
+
+@app.route('/get-images/<int:id>', methods=['GET'])
+def get_images_by_violationid (id):
+    try:
+        # Query to fetch user images by CNIC (replace with actual query logic)
+        violation_img=ImageControllerAndNotification.get_all_img_violationid(id)
+        if not violation_img :
+            return jsonify({"message": "No images found for this Violation ID."}), 404
+
+        # Prepare image data to return in the response
+
+
+
+        return jsonify({"image_data": violation_img }), 200
+
+    except Exception as e:
+        return jsonify({"message": f"An error occurred: {str(e)}"}), 500
+
+@app.route('/uploads/<path:filename>', methods=['GET'])
+def uploaded_file(filename):
+    # Check if the file exists in the directory
+    if os.path.exists(os.path.join(app.config['UPLOAD_FOLDER'], filename)):
+        return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
+    else:
+        return jsonify({"error": "File not found"}), 404
+
+# 1. Add Notification
+@app.route('/notifications', methods=['POST'])
+def create_notification():
+    data = request.json
+    required_fields = ['recipient_type', 'recipient_id', 'type', 'message']
+    if not all(field in data for field in required_fields):
+        return jsonify({"error": "Missing required fields."}), 400
+
+    result = ImageControllerAndNotification.add_notification(
+        recipient_type=data['recipient_type'],
+        recipient_id=data['recipient_id'],
+        type_=data['type'],
+        message=data['message']
+    )
+    return jsonify(result)
+
+
+@app.route('/getnotifications', methods=['POST'])
+def get_all_notifications():
+    data = request.get_json()
+
+    recipient_type = data.get('recipient_type')
+    recipient_id = data.get('recipient_id')
+
+    print(recipient_type)
+    print(recipient_id)
+
+    result = ImageControllerAndNotification.get_notifications(
+        recipient_type=recipient_type,
+        recipient_id=recipient_id
+    )
+
+    return jsonify(result)
+
+
+# 3. Update Notification
+@app.route('/notifications/<int:notification_id>', methods=['PUT'])
+def update_existing_notification(notification_id):
+    data = request.json
+    result = ImageControllerAndNotification.update_notification(
+        notification_id,
+        type_=data.get('type'),
+        message=data.get('message')
+    )
+    return jsonify(result)
+
+# 4. Delete Notification
+@app.route('/notifications/<int:notification_id>', methods=['DELETE'])
+def delete_existing_notification(notification_id):
+    result =ImageControllerAndNotification.delete_notification(notification_id)
+    return jsonify(result)
+
+# 5. Mark Notification as Read/Unread
+@app.route('/notifications/<int:notification_id>/mark', methods=['PUT'])
+def mark_notification(notification_id):
+    data = request.json
+    is_read = data.get('is_read', True)
+    result = ImageControllerAndNotification.mark_notification_status(notification_id, is_read)
+    return jsonify(result)
+
+
+@app.route('/on_duty_wardens/<int:camera_id>', methods=['GET'])
+def on_duty_wardens(camera_id):
+      # if your function is in another file
+
+    wardens = CameraChowkiController.get_on_duty_wardens(camera_id)
+
+    result = [{
+        'id': w.id,
+        'name': w.name,
+
+    } for w in wardens]
+
+    return jsonify({'status': 'success', 'wardens': result})
 
 
 if __name__ == "__main__":

@@ -4,9 +4,11 @@ from datetime import datetime
 import random
 import string
 from werkzeug.security import generate_password_hash
+import time
+from datetime import datetime
+
 class WardenChowkiController:
-    import time
-    from datetime import datetime
+
     ##################################################Shift#########################################################################
     @staticmethod
     def get_all_Shift():
@@ -80,11 +82,11 @@ class WardenChowkiController:
     def get_all_warden_city(city_name):
         city=LocationController.get_city_by_name(city_name)
 
-        wardens = db.session.query(TrafficWarden).filter(TrafficWarden.city_id == city['id']).all()
+        wardens = db.session.query(TrafficWarden).filter(TrafficWarden.city_id == city['id'] ).all()
         return [{'id': warden.id, 'name': warden.name, 'badge_number': warden.badge_number,
                  'address': warden.address, 'cnic': warden.cnic, 'email': warden.email,
                  'mobile_number': warden.mobile_number,
-                 'city_Name': LocationController.get_city_name_by_id(warden.city_id)} for warden in wardens]
+                 'city_Name': LocationController.get_city_name_by_id(warden.city_id)} for warden in wardens if warden.PermissionType==1]
 
     @staticmethod
     def get_warden_by_cnic(warden_cnic):
@@ -211,7 +213,29 @@ class WardenChowkiController:
             }
         }, 200
 
-################################################## WardenChowki #########################################################################
+    @staticmethod
+    def wardenlogincheck(badge, password):
+        # Search for the warden using the badge number
+        warden = TrafficWarden.query.filter_by(badge_number=badge).first()
+
+        # If warden not found
+        if not warden:
+            return {"message": "Badge number or password does not match"}, 401
+
+        # If passwords are hashed, use this:
+        # if not check_password_hash(warden.password, password):
+
+        # If passwords are stored as plain text (not recommended), use this:
+        if warden.password != password:
+            return {"message": "Badge number or password does not match"}, 401
+
+        # Login successful - return relevant data
+        return {
+            "WardenID": warden.id,
+            "PermissionType": warden.PermissionType
+        }, 200
+
+    ################################################## WardenChowki #########################################################################
 
     @staticmethod
     def calculate_wardens_requirement(total_wardens, total_chowkis, total_shifts):
@@ -227,6 +251,14 @@ class WardenChowkiController:
 
     @staticmethod
     def create_duty_roster():
+
+        # Check if the warden exists
+        wardenchowki = db.session.query(WardenChowki).all()
+        if wardenchowki:
+            for wc in wardenchowki:
+                db.session.delete(wc)
+            db.session.commit()
+
         schedule = {}
         cities = City.query.all()
         dutyroster=[]
@@ -361,6 +393,7 @@ class WardenChowkiController:
                 'shift_name': shift.shift_type,
                 'shift_time': shift.start_time.strftime('%H:%M')+" to "+ (shift.end_time.strftime('%H:%M')),  # Format the time as needed
                 'duty_date': assignment.duty_date.strftime('%Y-%m-%d'),  # Format the date as needed
+                'chowki_id':chowki.id
             })
 
         return result_list
@@ -398,6 +431,50 @@ class WardenChowkiController:
             result_list.append({
                 'warden_name': warden.name,
                 'badge_number': warden.badge_number,
+                'chowki_name': chowki.name,
+                'chowki_place': place.name,
+                'shift_name': shift.shift_type,
+                'shift_time': shift.start_time.strftime('%H:%M') + " to " + (shift.end_time.strftime('%H:%M')),
+                # Format the time as needed
+                'duty_date': assignment.duty_date.strftime('%Y-%m-%d'),  # Format the date as needed
+            })
+
+        return result_list
+
+    @staticmethod
+    def get_dutyroster_for_warden_byid(id):
+        # Step 1: Get the latest assignment date
+        latest_assignment = (
+            db.session.query(WardenChowki.duty_date)
+            .order_by(db.desc(WardenChowki.duty_date))
+            .first()
+        )
+
+        # Check if a last assignment was found
+        if not latest_assignment:
+            return []  # Return an empty list if no assignments exist
+
+        last_assign_date = latest_assignment.duty_date
+
+        # Step 2: Get all assignments on that date with detailed info
+        assignments_on_last_date = (
+            db.session.query(WardenChowki, TrafficWarden, Chowki, Place, Shift)
+            .join(TrafficWarden, TrafficWarden.id == WardenChowki.warden_id)
+            .join(Chowki, Chowki.id == WardenChowki.chowki_id)
+            .join(Place, Place.id == Chowki.place_id)
+            .join(Shift, Shift.id == WardenChowki.shift_id)
+            .filter(WardenChowki.duty_date == last_assign_date)
+            .filter(TrafficWarden.id == id)
+            .all()
+        )
+
+        # Step 3: Process results into a list of dictionaries
+        result_list = []
+        for assignment, warden, chowki, place, shift in assignments_on_last_date:
+            result_list.append({
+                'warden_name': warden.name,
+                'badge_number': warden.badge_number,
+                'chowki_id'    :chowki.id,
                 'chowki_name': chowki.name,
                 'chowki_place': place.name,
                 'shift_name': shift.shift_type,

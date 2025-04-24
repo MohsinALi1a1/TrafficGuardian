@@ -13,6 +13,7 @@ class Violation(db.Model):
     name = db.Column(db.String(255), nullable=False)
     description = db.Column(db.Text, nullable=True)
     limit_value = db.Column(db.Integer, nullable=False, default=-1)
+    status = db.Column(db.String(50), default="Active", nullable=False)
 # Back ref
     violation_fines=db.relationship("ViolationFine",back_populates="violation")
     violation_details = db.relationship("ViolationDetails", back_populates="violation")

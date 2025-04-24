@@ -2,12 +2,10 @@ from PIL import  ImageFilter
 import numpy as np
 import cv2
 import os
-import dill
 from ultralytics import YOLO
-import matplotlib.pyplot as plt
 
-
-class yolov8:
+from PIL import Image
+class YoloController:
     @staticmethod
     def is_helmet_detected(prediction_result):
 
@@ -18,6 +16,7 @@ class yolov8:
                 if class_name.lower() == "helmet":
                     return True
         return False
+
     @staticmethod
     # Helmet  motorbike   Head  SideMirror   License Plate
     def is_side_mirrors_detected(prediction_result):
@@ -29,6 +28,7 @@ class yolov8:
                 if class_name.lower() == "sidemirror":
                     return True
         return False
+
     @staticmethod
     def get_detected_classes(prediction_result):
 
@@ -39,6 +39,7 @@ class yolov8:
                 class_name = prediction_result.names[class_id]  # Class name
                 detected_classes.append(class_name)
         return detected_classes
+
     @staticmethod
     def count_object(prediction_result, object_name):
 
@@ -50,6 +51,7 @@ class yolov8:
                 if class_name.lower() == object_name.lower():
                     count += 1
         return count
+
     @staticmethod
     def crop_license_plate(prediction_result):
 
@@ -140,10 +142,10 @@ class yolov8:
 
         for i, result in enumerate(results):
             image = result.orig_img
-            helmet_detected = yolov8.is_helmet_detected(result)
-            side_mirrors_detected = yolov8.is_side_mirrors_detected(result)
-            count_head = yolov8.count_object(result, 'head')
-            cropped_plates = yolov8.crop_license_plate(result)
+            helmet_detected = YoloController.is_helmet_detected(result)
+            side_mirrors_detected = YoloController.is_side_mirrors_detected(result)
+            count_head = YoloController.count_object(result, 'head')
+            cropped_plates = YoloController.crop_license_plate(result)
 
             violations = []
             if not helmet_detected:
@@ -173,7 +175,7 @@ class yolov8:
                 print(label)
 
                 cv2.rectangle(image, (x1, y1), (x2, y2), (0, 255, 0), 3)
-                cv2.putText(image, label, (x1-10, y1 - 20), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 3)
+                cv2.putText(image, label, (x1 - 10, y1 - 20), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 3)
 
             # Save the final image with boxes
             save_path = os.path.join(save_dir, f"violation_{i}.jpg")
@@ -201,11 +203,135 @@ class yolov8:
         return violations_and_plates
 
     @staticmethod
+    def detect_violations_from_frontImage(source):
+        try:
+            print("Starting violation detection...")  # Debug print
+            model_path = r'C:\Drive D\Pycharm\TrafficGuardian\yolov8mtrafficmodel.pt'
+            model = YOLO(model_path)
+            print("Model loaded successfully.")
+
+            results = model.predict(source=source, show=False)
+            print("Prediction completed.")  # Check if the model.predict is called
+
+            violations_and_plates = []  # List to store violations and cropped plates
+
+            for i, result in enumerate(results):
+                print(f"Processing result {i + 1}")  # Debug print
+                image = result.orig_img
+                side_mirrors_detected = YoloController.is_side_mirrors_detected(result)
+                cropped_plates = YoloController.crop_license_plate(result)
+
+                violations = []
+
+                if not side_mirrors_detected:
+                    violations.append("Side Mirrors")
+
+                if not cropped_plates:
+                    violations.append("License Plate: Not Found")
+
+                if violations:
+                    print(f"Violations Detected: {', '.join(violations)}")
+
+                for box in result.boxes:
+                    x1, y1, x2, y2 = map(int, box.xyxy[0])
+                    class_id = int(box.cls[0])
+                    confidence = box.conf[0]
+                    label = f"{result.names[class_id]}: {confidence:.2f}"
+                    print(label)
+
+                    cv2.rectangle(image, (x1, y1), (x2, y2), (0, 255, 0), 3)
+                    cv2.putText(image, label, (x1 - 10, y1 - 20), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 3)
+                # image = Image.fromarray(image)
+
+
+                # Resize and display image as before
+                new_width = 800
+                new_height = 800
+                dsize = (new_width, new_height)
+                resized_image = cv2.resize(image, dsize)
+
+
+                cv2.imshow(f"Detection Result {i}", resized_image)
+                cv2.waitKey(0)
+                cv2.destroyAllWindows()
+
+                violations_and_plates.append({
+                    'violations': violations,
+                    'cropped_license_plate': cropped_plates[0] if cropped_plates else None
+                })
+
+            return violations_and_plates
+
+        except Exception as e:
+            print(f"Error during violation detection: {e}")
+            return []
+
+    @staticmethod
+    def detect_violations_from_sideImage(source):
+        try:
+            print("Starting violation detection...")  # Debug print
+            model_path = r'C:\Drive D\Pycharm\TrafficGuardian\yolov8mtrafficmodel.pt'
+            model = YOLO(model_path)
+            print("Model loaded successfully.")
+
+            results = model.predict(source=source, show=False)
+            print("Prediction completed.")  # Check if the model.predict is called
+
+            violations_and_plates = []  # List to store violations
+
+            for i, result in enumerate(results):
+                print(f"Processing result side {i + 1}")  # Debug print
+                image = result.orig_img
+                helmet_detected = YoloController.is_helmet_detected(result)
+                side_mirrors_detected = YoloController.is_side_mirrors_detected(result)
+                count_head = YoloController.count_object(result, 'head')
+
+                violations = []
+                if not helmet_detected:
+                    violations.append("Helmet")
+                if not side_mirrors_detected:
+                    violations.append("Side Mirrors")
+                if count_head >= 2:
+                    violations.append(f"Persons: {count_head}")
+
+
+                if violations:
+                    print(f"Violations Detected: {', '.join(violations)}")
+
+                for box in result.boxes:
+                    x1, y1, x2, y2 = map(int, box.xyxy[0])
+                    class_id = int(box.cls[0])
+                    confidence = box.conf[0]
+                    label = f"{result.names[class_id]}: {confidence:.2f}"
+                    print(label)
+
+                    cv2.rectangle(image, (x1, y1), (x2, y2), (0, 255, 0), 3)
+                    cv2.putText(image, label, (x1 - 10, y1 - 20), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 8)
+
+                new_width = 800
+                new_height = 800
+                dsize = (new_width, new_height)
+                resized_image = cv2.resize(image, dsize)
+
+                cv2.imshow(f"Detection Result {i}", resized_image)
+                cv2.waitKey(0)
+                cv2.destroyAllWindows()
+
+                violations_and_plates.append({
+                    'violations': violations
+                })
+
+            return violations_and_plates
+
+        except Exception as e:
+            print(f"Error during violation detection from Side: {e}")
+            return []
+    @staticmethod
     def fine_tune_and_save(data_path, model_path, save_path, batch_size=16):
         print("Fine-tuning the model...")
         model = YOLO(model_path)  # Load the pre-trained model
         # Fine-tune the model with specified batch size
-        model.train(data=data_path, epochs=30, imgsz=640, batch=batch_size , device=0 )
+        model.train(data=data_path, epochs=30, imgsz=640, batch=batch_size, device=0)
         model.save(save_path)  # Save the fine-tuned model
         print(f"Model saved to {save_path}")
 
@@ -267,15 +393,12 @@ class yolov8:
         out.release()  # Save the output video
         cv2.destroyAllWindows()
 
-
-
     # Main function to run the detection
-    if __name__ == "__main__":
-        # Set the path to your dataset and model
-        data_path = r'C:\Users\92306\PycharmProjects\TrafficGuardian\traffic guardian.v2i.yolov8\data.yaml'  # Update this path
-        model_path = r'C:\Users\92306\PycharmProjects\TrafficGuardian\runs\detect\train26\weights\best.pt'  # Pre-trained model
-        model_save_path = r'C:\Users\92306\PycharmProjects\TrafficGuardian\Model-yolo\yolov8s.pt'  # Path to save the fine-tuned model
-
+    # if __name__ == "__main__":
+    #     # Set the path to your dataset and model
+    #     data_path = r'C:\Users\92306\PycharmProjects\TrafficGuardian\traffic guardian.v2i.yolov8\data.yaml'  # Update this path
+    #     model_path = r'C:\Users\92306\PycharmProjects\TrafficGuardian\runs\detect\train26\weights\best.pt'  # Pre-trained model
+    #     model_save_path = r'C:\Users\92306\PycharmProjects\TrafficGuardian\Model-yolo\yolov8s.pt'  # Path to save the fine-tuned model
 
         # # Load an image
         # image_path = "path_to_your_image.jpg"
@@ -308,10 +431,7 @@ class yolov8:
 
         # Assuming `result` is the model prediction result
 
-
-
-
-        #///////////////////////////////////////////////////////////////
+        # ///////////////////////////////////////////////////////////////
         #  Callling of functions
         # if is_helmet_detected(result):
         #     print("Helmet detected!")

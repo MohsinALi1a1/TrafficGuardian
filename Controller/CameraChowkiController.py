@@ -1,4 +1,7 @@
-from Model import Camera, Place, Direction, db, Chowki, CameraChowki, City
+from datetime import datetime
+
+from Model import Camera, Place, Direction, db, Chowki, CameraChowki, City, WardenChowki, Shift, TrafficWarden
+
 
 class CameraChowkiController:
 
@@ -264,6 +267,41 @@ class CameraChowkiController:
         return result_list
 
     @staticmethod
+    def get_all_linkCamera_with_Chowkibyid(chowki_id):
+
+        chowki = db.session.query(Chowki).filter(Chowki.id == chowki_id).first()
+        if not chowki:
+            return []
+
+        results = (
+            db.session.query(
+                Place.name.label('place_name'),
+                Chowki.id.label('chowki_id'),
+                Chowki.name.label('chowki_name'),
+                Camera.name.label('camera_name'),
+                Camera.id.label('camera_id'),
+                Camera.type.label('camera_type'),
+            )
+            .join(Chowki, Chowki.place_id == Place.id)
+            .join(CameraChowki, CameraChowki.chowki_id == Chowki.id)
+            .join(Camera, Camera.id == CameraChowki.camera_id)
+            .filter(Chowki.id == chowki_id)
+            .all()
+        )
+
+        result_list = []
+        for row in results:
+            result_list.append({
+                'camera_id': row.camera_id,
+                'place_name': row.place_name,
+                'chowki_name': row.chowki_name,
+                'camera_name': row.camera_name,
+                'camera_type': row.camera_type
+            })
+
+        return result_list
+
+    @staticmethod
     def get_all_linkChowki_with_Camera(camera_name):
 
         camera = db.session.query(Camera).filter(Camera.name == camera_name).first()
@@ -296,6 +334,40 @@ class CameraChowkiController:
 
         return result_list
 
+    @staticmethod
+    def get_all_linkchowki_with_Camerabyid(camera_id):
+
+        camera = db.session.query(Camera).filter(Camera.id == camera_id).first()
+        if not camera:
+            return []
+
+        results = (
+            db.session.query(
+                Place.name.label('place_name'),
+                Chowki.id.label('chowki_id'),
+                Chowki.name.label('chowki_name'),
+                Camera.name.label('camera_name'),
+                Camera.id.label('camera_id'),
+                Camera.type.label('camera_type'),
+            )
+            .join(Chowki, Chowki.place_id == Place.id)
+            .join(CameraChowki, CameraChowki.chowki_id == Chowki.id)
+            .join(Camera, Camera.id == CameraChowki.camera_id)
+            .filter(Camera.id == camera_id)
+            .all()
+        )
+
+        result_list = []
+        for row in results:
+            result_list.append({
+                'camera_id': row.camera_id,
+                'place_name': row.place_name,
+                'chowki_name': row.chowki_name,
+                'camera_name': row.camera_name,
+                'camera_type': row.camera_type
+            })
+
+        return result_list
 
     def link_camera_to_chowki(chowki_name, camera_list):
 
@@ -441,4 +513,77 @@ class CameraChowkiController:
 
         return " ".join(response) if response else "No changes made."
 
+    @staticmethod
+    def get_on_duty_wardens(camera_id: int):
+        print(f"\n🔍 Checking on-duty wardens for Camera ID: {camera_id}")
 
+        # Step 1: Get current system time
+        now = datetime.now().time()
+        print(f"🕒 Current System Time: {now}")
+
+        # Step 2: Get connected chowkis for the camera
+        connected_chowkis_query = db.session.query(CameraChowki.chowki_id).filter(
+            CameraChowki.camera_id == camera_id)
+        connected_chowkis = connected_chowkis_query.all()
+        chowki_ids = [row.chowki_id for row in connected_chowkis]
+
+        if not chowki_ids:
+            print("⚠️ No chowkis found for this camera.")
+            return []
+
+        print(f"✅ Connected Chowki IDs: {chowki_ids}")
+
+        # Step 3: Join WardenChowki and Shift table for those chowkis
+        joined = db.session.query(
+            WardenChowki.warden_id,
+            WardenChowki.shift_id,
+            WardenChowki.chowki_id,
+            Shift.start_time,
+            Shift.end_time
+        ).join(
+            Shift, WardenChowki.shift_id == Shift.id
+        ).filter(
+            WardenChowki.chowki_id.in_(chowki_ids)
+        ).all()
+
+        if not joined:
+            print("⚠️ No warden-shift assignments found for connected chowkis.")
+            return []
+
+        print(f"📋 Total Warden-Shift Entries Found: {len(joined)}")
+
+        # Step 4: Filter wardens currently on duty
+        on_duty_warden_ids = []
+        for entry in joined:
+            shift_start = entry.start_time
+            shift_end = entry.end_time
+            print(f"\n🧑‍✈️ Warden ID: {entry.warden_id}, Chowki ID: {entry.chowki_id}")
+            print(f"⏰ Shift Start: {shift_start}, End: {shift_end}")
+
+            if shift_start <= shift_end:
+                # Same day shift
+                if shift_start <= now <= shift_end:
+                    print("✅ Warden is on duty.")
+                    on_duty_warden_ids.append(entry.warden_id)
+                else:
+                    print("❌ Warden is NOT on duty.")
+            else:
+                # Overnight shift (e.g., 16:00 to 00:00)
+                if now >= shift_start or now <= shift_end:
+                    print("🌙✅ Warden is on overnight duty.")
+                    on_duty_warden_ids.append(entry.warden_id)
+                else:
+                    print("🌙❌ Warden is NOT on overnight duty.")
+
+        if not on_duty_warden_ids:
+            print("⚠️ No wardens currently on duty.")
+            return []
+
+        # Step 5: Get full warden details
+        on_duty_wardens = db.session.query(TrafficWarden).filter(TrafficWarden.id.in_(on_duty_warden_ids)).all()
+        print(f"\n✅ Total On-Duty Wardens Found: {len(on_duty_wardens)}")
+
+        for warden in on_duty_wardens:
+            print(f"👮‍♂️ Warden ID: {warden.id}, Name: {warden.name}")
+
+        return on_duty_wardens
