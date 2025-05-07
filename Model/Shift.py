@@ -1,6 +1,6 @@
 # CREATE TABLE Shift (
 #     id INT PRIMARY KEY AUTO_INCREMENT,
-#     shift_type ENUM('morning', 'evening', 'night') NOT NULL,
+#     shift_type ENUM('Morning', 'Evening', 'Night') NOT NULL,
 #     start_time TIME NOT NULL,
 #     end_time TIME NOT NULL
 # );

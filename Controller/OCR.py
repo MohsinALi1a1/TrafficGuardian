@@ -56,7 +56,7 @@ import cv2
 import easyocr
 import matplotlib.pyplot as plt
 import re
-
+import numpy as np
 class OCR:
 
     @staticmethod
@@ -64,64 +64,43 @@ class OCR:
         # Initialize EasyOCR Reader
         reader = easyocr.Reader(['en'])
 
-        # # Load the image
-        # image_path = r'C:\Users\Syed Mohsin Ali\Desktop\Capture.PNG'
-        # image = cv2.imread(image_path)
         image = img
-        if image is None:
-            print("❌ Error: Image not found or path is incorrect.")
-            exit()
+        if image is None or not isinstance(image, np.ndarray):
+            print("❌ Error: Invalid image.")
+            return "UNKNOWN"
 
         # Run OCR
         results = reader.readtext(image)
 
-        # Display detected characters
         extracted_text = []
         print("🔠 Detected Characters from Image:\n")
 
         for (bbox, text, prob) in results:
             print(f"📦 Text: '{text}' | Confidence: {prob:.2f}")
-            if (prob > 0.5):
+            if prob > 0:
                 extracted_text.append(text)
 
-                # Draw bounding box
+                # Optional: Draw bounding box (if needed for later processing)
                 (top_left, top_right, bottom_right, bottom_left) = bbox
                 top_left = tuple(map(int, top_left))
                 bottom_right = tuple(map(int, bottom_right))
                 cv2.rectangle(image, top_left, bottom_right, (0, 255, 0), 2)
                 cv2.putText(image, text, top_left, cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 0, 0), 2)
 
-        # Display final image with bounding boxes
-        plt.figure(figsize=(12, 6))
-        plt.imshow(cv2.cvtColor(image, cv2.COLOR_BGR2RGB))
-        plt.title("🖼️ Text Detection using EasyOCR")
-        plt.axis("off")
-        plt.show()
-
-        extracted_number=""
+        # Extract and clean plate number
+        extracted_number = ""
         for text in extracted_text:
-
-            # Final Output
-            print("\n🆗 Final Extracted Plate Text:", text)
-
-            # Replace any character that is not A-Z, a-z, or 0-9 with a dash
             cleaned_text = re.sub(r'[^A-Za-z0-9]+', '-', text)
+            print("🔧 Cleaned Text:", cleaned_text)
 
-            print("🔧 Replaced Text:", cleaned_text)
-            # Regex pattern
-            pattern = r'\b([A-Za-z]{1,4}[-\s]?\d{1,4})\b'
-
-            # Search
+            pattern = r'\b([A-Za-z]{1,5}[-\s]?\d{1,5})\b'
             match = re.search(pattern, cleaned_text)
-
             if match:
                 plate_number = match.group(1)
                 print("✅ Cleaned Plate Number:", plate_number)
-                extracted_number=plate_number
+                extracted_number = plate_number
+                break
             else:
-                print("❌ No valid plate number found.")
-        if not extracted_number.strip():
-            bikenumber = "UNKNOWN"
-        else:
-            bikenumber = extracted_number.strip()
-        return bikenumber
+                print("❌ No valid plate number found in:", text)
+        print(f"return number plate from ocr {extracted_number}")
+        return extracted_number.strip() if extracted_number else ""

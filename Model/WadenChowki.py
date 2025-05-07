@@ -4,9 +4,9 @@
 #     chowki_id INT,
 #     shift_id INT,
 #     duty_date DATE,
-#     FOREIGN KEY (warden_id) REFERENCES TrafficWarden(id),
-#     FOREIGN KEY (chowki_id) REFERENCES Chowki(id),
-#     FOREIGN KEY (shift_id) REFERENCES Shift(id)
+#     FOREIGN KEY (warden_id) REFERENCES TrafficWarden(id)ON DELETE RESTRICT,
+#     FOREIGN KEY (chowki_id) REFERENCES Chowki(id) ON DELETE RESTRICT,
+#     FOREIGN KEY (shift_id) REFERENCES Shift(id) ON DELETE RESTRICT
 # );
 
 from Model.Configure import  db

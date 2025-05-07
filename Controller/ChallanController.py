@@ -135,10 +135,20 @@ class ChallanController:
             'id': violation.id,
             'name': violation.name,
             'description': violation.description,
-            'limitValue':violation.limit_value,
-            'status':violation.status,
-            'fines': [{'id': fine.id, 'created_date': fine.created_date,'violation_id':violation.id, 'active':fine.active,'fine': float(fine.fine)} for fine in
-                      violation.violation_fines if fine.active == 1]
+            'limitValue': violation.limit_value,
+            'status': violation.status,
+            'start_date': violation.start_date.isoformat() if violation.start_date else None,
+            'end_date': violation.end_date.isoformat() if violation.end_date else None,
+            'fines': [
+                {
+                    'id': fine.id,
+                    'created_date': fine.created_date,
+                    'violation_id': violation.id,
+                    'active': fine.active,
+                    'fine': float(fine.fine)
+                }
+                for fine in violation.violation_fines if fine.active == 1
+            ]
         } for violation in violations]
 
     @staticmethod
@@ -150,8 +160,34 @@ class ChallanController:
             'description': violation.description,
             'limitValue': violation.limit_value,
             'status': violation.status,
+            'start_date': violation.start_date.isoformat() if violation.start_date else None,
+            'end_date': violation.end_date.isoformat() if violation.end_date else None,
             'fines': [{'id': fine.id, 'created_date': fine.created_date,'violation_id':violation.id,'active':fine.active, 'fine': float(fine.fine)} for fine in
                       violation.violation_fines if fine.active == 1]
+
+        }
+
+    @staticmethod
+    def get_violation_by_name(violation_name):
+        violation = Violation.query.filter_by(name=violation_name).first_or_404()
+        return {
+            'id': violation.id,
+            'name': violation.name,
+            'description': violation.description,
+            'limitValue': violation.limit_value,
+            'status': violation.status,
+            'start_date': violation.start_date.isoformat() if violation.start_date else None,
+            'end_date': violation.end_date.isoformat() if violation.end_date else None,
+            'fines': [
+                {
+                    'id': fine.id,
+                    'created_date': fine.created_date,
+                    'violation_id': violation.id,
+                    'active': fine.active,
+                    'fine': float(fine.fine)
+                }
+                for fine in violation.violation_fines if fine.active == 1
+            ]
         }
 
     @staticmethod
@@ -176,8 +212,11 @@ class ChallanController:
         db.session.commit()
         return {'Successfully': f'Violation {violation.name} is successfully deleted'}, 201
 
+
+
     @staticmethod
-    def update_violation(violation_id, new_name=None, new_description=None, limit_value=None, fine=None):
+    def update_violation(violation_id, new_name=None, new_description=None, limit_value=None,
+                         fine=None, start_date=None, end_date=None):
         violation = db.session.query(Violation).get(violation_id)
 
         if not violation:
@@ -188,8 +227,14 @@ class ChallanController:
             violation.name = new_name
         if new_description and violation.description != new_description:
             violation.description = new_description
-        if limit_value and violation.limit_value != limit_value:
+        if limit_value is not None and violation.limit_value != limit_value:
             violation.limit_value = limit_value
+            violation.start_date=None
+            violation.end_date=None
+        if start_date is not None:
+            violation.start_date = start_date
+        if end_date is not None:
+            violation.end_date = end_date
 
         db.session.commit()  # Commit violation updates first
 
@@ -714,7 +759,7 @@ class ChallanController:
                         print("Invalid string for conversion")
 
                     camera=CameraChowkiController.get_camera_by_id(cam_id)
-                    extracted_plate_text =""
+
 
                     if 'error' not in camera:
                         camera_location=camera.get('Direction')
@@ -740,11 +785,12 @@ class ChallanController:
                                     if cropped_plate is not None:
 
                                         extracted_plate_text=Controller.OCR.NumberExtractor(cropped_plate)
-
-                                        image_list.append(image)
+                                        print(f"return number plate from ocr to challan {extracted_plate_text}")
                                         cv2.imshow(f"Cropped License Plate {i + 1}", cropped_plate)
                                         cv2.waitKey(0)
                                         cv2.destroyAllWindows()
+                                        cropped_plate = Image.fromarray(cropped_plate)
+                                        image_list.append(cropped_plate)
                                     else:
                                         print("No license plate image found.")
 
@@ -768,6 +814,7 @@ class ChallanController:
 
 
                 bikenumber=extracted_plate_text
+                print(f"Bike Number of Violator is {bikenumber}")
                 try:
                     bike = ChallanController.get_vehicle_by_licenseplate(bikenumber)
                     if 'error' in bike:
@@ -787,9 +834,11 @@ class ChallanController:
                 try:
 
                     detection_fromfront = violations_and_plates[0]["violations"]
-                    print(detection_fromfront)
+                    print("Front Camera Violation: " + ', '.join(detection_fromfront))
+
+
                     detection_fromside = detectedviolations[0]["violations"]
-                    print(detection_fromside)
+                    print("Side Camera Violation: " + ', '.join(detection_fromside))
                     for i in detection_fromfront:
                         if i == 'Side Mirrors' and  "Side Mirrors" in detection_fromside:
                             violations_ids.append(3)
@@ -806,7 +855,7 @@ class ChallanController:
                     return jsonify({"message": f"An error occurred getting Violations: {str(e)}"}), 500
 
                 try:
-                    print(len(image_list))
+                    print(f"Image Length Which Save against this violation {len(image_list)}")
                     response, code = ChallanController.add_violation_history_and_details(bike['id'],
                                                                                          camera_location, status,
                                                                                          cam_id,

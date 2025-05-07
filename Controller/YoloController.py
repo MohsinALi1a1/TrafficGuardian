@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from PIL import  ImageFilter
 import numpy as np
 import cv2
@@ -5,14 +7,73 @@ import os
 from ultralytics import YOLO
 
 from PIL import Image
-class YoloController:
-    @staticmethod
-    def is_helmet_detected(prediction_result):
 
-        if prediction_result.boxes:  # Ensure there are detected boxes
-            for box in prediction_result.boxes:
+import cv2
+import math
+from ultralytics import YOLO
+from Controller import ChallanController,YoloController
+
+
+class YoloController:
+
+
+
+    @staticmethod
+    # Function to calculate center of a box
+    def get_center(box):
+        x1, y1, x2, y2 = box
+        return ((x1 + x2) / 2, (y1 + y2) / 2)
+    @staticmethod
+    # Function to calculate Euclidean distance
+    def euclidean_distance(p1, p2):
+        return math.sqrt((p1[0] - p2[0]) ** 2 + (p1[1] - p2[1]) ** 2)
+
+    @staticmethod
+    def parse_detections(prediction_result, target_labels):
+        """
+        Filters out boxes for the given target_labels from prediction_result.
+        Returns a list of dicts with x1, y1, x2, y2, class_name, confidence.
+        """
+        filtered = []
+        for box in prediction_result.boxes:
+            class_id = int(box.cls[0])
+            class_name = prediction_result.names[class_id]
+
+            if class_name.lower() in target_labels:
+                x1, y1, x2, y2 = map(float, box.xyxy[0])
+                confidence = float(box.conf[0])
+                filtered.append({
+                    "x1": x1, "y1": y1, "x2": x2, "y2": y2,
+                    "class": class_name, "confidence": confidence
+                })
+        return filtered
+    @staticmethod
+    def is_helmet_detected(prediction_result_1, prediction_result_2):
+        # Step 1: Get helmets from prediction_result_1
+        helmet_detections = YoloController.parse_detections(prediction_result_1, target_labels=["helmet"])
+
+        # Step 2: Get heads from prediction_result_1
+        head_detections = YoloController.parse_detections(prediction_result_1, target_labels=["head"])
+
+        # Step 3: Get persons from prediction_result_2
+        person_detections = YoloController.parse_detections(prediction_result_2, target_labels=["person"])
+
+        # Debug: print how many detections were found
+        print(f"Helmets Detected: {len(helmet_detections)}")
+        print(f"Heads Detected: {len(head_detections)}")
+        print(f"Persons Detected: {len(person_detections)}")
+
+        violation_record = ChallanController.get_violation_by_id(1)
+        id = violation_record['id']
+        limit = violation_record['limitValue']
+
+        # Return the categorized detections if needed for further processing
+        # return helmet_detections, head_detections, person_detections
+
+        if prediction_result_1.boxes:  # Ensure there are detected boxes
+            for box in prediction_result_1.boxes:
                 class_id = int(box.cls[0])  # Class ID
-                class_name = prediction_result.names[class_id]  # Class name
+                class_name = prediction_result_1.names[class_id]  # Class name
                 if class_name.lower() == "helmet":
                     return True
         return False
@@ -72,6 +133,62 @@ class YoloController:
                     cropped_images.append(cropped_image)
 
         return cropped_images
+
+    @staticmethod
+
+    def check_overriding_violation(persons_on_bike):
+        """
+        Parameters:
+            persons_on_bike (int): Number of persons detected on the bike
+            violation_record (dict): Violation record for 'Overriding' with keys:
+                - limit (int)
+                - start_date (datetime or None)
+                - end_date (datetime or None)
+
+        Returns:
+            Tuple: (is_violation (bool), updated_violation_record (dict or None))
+                - is_violation: True if violation occurred
+                - updated_violation_record: Updated record if any change needed, else None
+        """
+
+        violation_record= ChallanController.get_violation_by_id(2)
+        id=violation_record['id']
+        limit=violation_record['limitValue']
+
+        if violation_record['start_date'] is not None:
+            start_date = datetime.strptime(violation_record['start_date'], '%Y-%m-%dT%H:%M:%S')
+        else:
+            start_date=None
+
+        if violation_record['end_date'] is not None:
+            end_date = datetime.strptime(violation_record['end_date'], '%Y-%m-%dT%H:%M:%S')
+        else:
+            end_date=None
+
+        now = datetime.now()
+
+        print(f"LIMIT OF OVERRIDING IS {limit}")
+        if limit == -1:
+            if persons_on_bike > 2:
+                return True
+        else:
+            if start_date and start_date > now:
+                if persons_on_bike > 2:
+                    return True
+            elif start_date and start_date <= now and end_date and end_date >= now:
+                if persons_on_bike > limit:
+                    return True
+            elif end_date and end_date < now:
+
+                # Need to update the violation rule in the database
+                ChallanController.update_violation(id,None,None,-1,None,None,None)
+
+                if persons_on_bike > 2:
+                    return True
+                else:
+                    return False
+
+        return False
 
     @staticmethod
     def preprocess_image(image, target_size=(640, 640), grayscale=False, normalize=True, blur=False,
@@ -134,9 +251,10 @@ class YoloController:
     @staticmethod
     def detect_violations_from_Image(source, model_path, save_dir=r"./Predictions"):
         os.makedirs(save_dir, exist_ok=True)  # Ensure save directory exists
+        #  MODEL FOR HELMET
         model = YOLO(model_path)
-
         results = model.predict(source=source, show=False)
+
 
         violations_and_plates = []  # List to store violations and cropped plates
 
@@ -269,29 +387,37 @@ class YoloController:
     @staticmethod
     def detect_violations_from_sideImage(source):
         try:
-            print("Starting violation detection...")  # Debug print
+            print("Starting violation detection...")
             model_path = r'C:\Drive D\Pycharm\TrafficGuardian\yolov8mtrafficmodel.pt'
             model = YOLO(model_path)
             print("Model loaded successfully.")
-
             results = model.predict(source=source, show=False)
-            print("Prediction completed.")  # Check if the model.predict is called
+            print("Prediction completed.")
+
+            # MODEL FOR PERSONS
+            model2 = YOLO(r"C:\Users\Syed Mohsin Ali\PycharmProjects\TrafficGuardian\yolov8s.pt")
+            person_and_bike_result = model2.predict(source=source, show=False)
 
             violations_and_plates = []  # List to store violations
 
             for i, result in enumerate(results):
                 print(f"Processing result side {i + 1}")  # Debug print
                 image = result.orig_img
-                helmet_detected = YoloController.is_helmet_detected(result)
+                helmet_detected = YoloController.is_helmet_detected(result,person_and_bike_result[0])
                 side_mirrors_detected = YoloController.is_side_mirrors_detected(result)
                 count_head = YoloController.count_object(result, 'head')
-
+                print(f"Total Head {count_head}")
                 violations = []
                 if not helmet_detected:
                     violations.append("Helmet")
                 if not side_mirrors_detected:
                     violations.append("Side Mirrors")
-                if count_head >= 2:
+                check=YoloController.check_overriding_violation(count_head)
+                print(type(check))
+
+                print(f"OVerrider {check}")
+                if check:
+                    print("Overriding appended")
                     violations.append(f"Persons: {count_head}")
 
 

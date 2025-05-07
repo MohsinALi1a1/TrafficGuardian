@@ -1172,8 +1172,10 @@ def update_violation():
         new_description = data.get('new_description')
         limit_value=data.get('newlimitValue')
         fine=data.get('newfine')
+        start_date =data.get('start_date')
+        end_date = data.get('end_date')
 
-        result = ChallanController.update_violation(violation_id, new_name, new_description ,limit_value,fine)
+        result = ChallanController.update_violation(violation_id, new_name, new_description ,limit_value,fine,start_date, end_date)
         return jsonify(result)
     except Exception as exp:
         print(str(exp))
