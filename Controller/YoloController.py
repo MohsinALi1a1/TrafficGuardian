@@ -16,8 +16,6 @@ from Controller import ChallanController,YoloController
 
 class YoloController:
 
-
-
     @staticmethod
     # Function to calculate center of a box
     def get_center(box):
