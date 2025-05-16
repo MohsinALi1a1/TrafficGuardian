@@ -2,11 +2,9 @@ import io
 import os
 from PIL import Image
 from datetime import datetime
-
-
 from Model.Configure import app
 from flask import  request ,jsonify, send_from_directory
-from Controller import LocationController, ChallanController, ImageControllerAndNotification
+from Controller import LocationController, ChallanController, ImageControllerAndNotification, NakaGraphController
 from Controller import CameraChowkiController
 from Controller import WardenChowkiController
 from Controller import YoloController
@@ -14,6 +12,7 @@ from Controller import YoloController
 
 
 ########################################  City  ############################################
+
 
 @app.route('/city', methods=['GET'])
 def get_all_cities():
@@ -90,6 +89,19 @@ def delete_city_by_name():
         return jsonify({'error': str(exp)}), 500
 
 
+@app.route('/deletecitybyname', methods=['DELETE'])
+def delete_city_by_n():
+    try:
+        city_name = request.args.get('name')
+        if not city_name:
+            return jsonify({"error": "City Name is required as query parameter"}), 400
+
+        # Delete the city and get the success message
+        message, code = LocationController.delete_city(city_name)
+        return jsonify(message), code
+
+    except Exception as exp:
+        return jsonify({'error': str(exp)}), 500
 
 # Route to update a city
 @app.route('/updatecity', methods=['PUT'])
@@ -175,6 +187,7 @@ def add_place():
             return jsonify(place), 401
         return jsonify(place), 200
     except Exception as exp:
+        print(exp)
         return jsonify({'error': str(exp)}), 500
 
 
@@ -195,6 +208,24 @@ def delete_place_by_name():
     except Exception as exp:
         return jsonify({'error': str(exp)}), 500
 
+@app.route('/deleteplacebyget', methods=['DELETE'])
+def delete_place_by_name_by_get():
+    try:
+        place_name = request.args.get('placename')
+        city_name = request.args.get('cityname')
+
+        if not place_name or not city_name:
+            return jsonify({"error": "Place name & City name are required"}), 400
+
+        city_name = city_name.title()
+        place_name = place_name.title()
+
+        # Call the delete function
+        message, code = LocationController.delete_place(city_name, place_name)
+        return jsonify(message), code
+
+    except Exception as exp:
+        return jsonify({'error': str(exp)}), 500
 
 
 # Route to update a Place name
@@ -304,6 +335,21 @@ def delete_direction_by_name():
         return jsonify({'error': str(exp)}), 500
 
 
+@app.route('/deletedirectionget', methods=['DELETE'])
+def delete_direction_by_namebyget():
+    try:
+        place_name = request.args.get('placename')
+        direction_name = request.args.get('directionname')
+        if not place_name or not direction_name:
+            return jsonify({"error": "Place name & Direction name is required"}), 400
+        direction_name = direction_name.title()
+        place_name = place_name.title()
+        # Delete the Place and get the success message
+        message,code = LocationController.delete_direction(place_name,direction_name)
+        return jsonify(message),code
+    except Exception as exp:
+        return jsonify({'error': str(exp)}), 500
+
 
 
 # Route to update a Direction
@@ -343,6 +389,7 @@ def get_all_camera():
             return jsonify({"error": f"No camera found for the specified Place {place_name} on Direction {direction_name}"}), 404
         return jsonify(cameras),200
     except Exception as exp:
+
         return jsonify({'error': str(exp)}), 500
 
 
@@ -409,6 +456,28 @@ def delete_camera_by_name():
         return jsonify(message)
     except Exception as exp:
         return jsonify({'error': str(exp)}), 500
+
+@app.route('/deletecamerabyget', methods=['DELETE'])
+def delete_camera_by_name_byget():
+    try:
+        camera_name = request.args.get('name')
+        direction_name = request.args.get('directionname')
+        camera_type = request.args.get('cameratype')
+        print(camera_name ,direction_name ,camera_type)
+
+        if not camera_name or not direction_name or not camera_type:
+            return jsonify({"error": "Direction name, Camera name, and Type are required"}), 400
+
+        camera_name = camera_name.title()
+        direction_name = direction_name.title()
+
+        # Delete the Camera and get the success message
+        message ,code= CameraChowkiController.delete_camera(camera_name, direction_name, camera_type)
+        return jsonify(message),code
+
+    except Exception as exp:
+        return jsonify({'error': str(exp)}), 500
+
 ########################################  Chowki  ############################################
 
 @app.route('/chowki', methods=['POST'])
@@ -737,6 +806,17 @@ def delete_shift_by_name():
         return jsonify({'error': str(exp)}), 500
 
 
+@app.route('/deleteshiftbyget', methods=['DELETE'])
+def delete_shift_by_name_get():
+    try:
+        shift_name = request.args.get('shiftname')
+
+
+        message,code = WardenChowkiController.delete_shift(shift_name)
+        return jsonify(message), 200
+    except Exception as exp:
+        return jsonify({'error': str(exp)}), 500
+
 
 # Route to update a city
 @app.route('/updateshift', methods=['PUT'])
@@ -813,9 +893,10 @@ def add_warden():
         email = email.title()
         city_name = city_name.title()
         # Add the new warden
-        new_warden = WardenChowkiController.add_warden(name, address, cnic, email, mobile_number, city_name)
-        return jsonify(new_warden), 201
+        new_warden,code = WardenChowkiController.add_warden(name, address, cnic, email, mobile_number, city_name)
+        return jsonify(new_warden), code
     except Exception as exp:
+        print(str(exp))
         return jsonify({'error': str(exp)}), 500
 
 
@@ -830,6 +911,22 @@ def delete_warden_route():
             return jsonify({"error": "CNIC  is required"}), 400
 
         return WardenChowkiController.delete_warden(cnic)
+    except Exception as exp:
+        print(str(exp))
+        return jsonify({'error': str(exp)}), 500
+
+
+
+@app.route('/deletewardenbyget', methods=['DELETE'])
+def delete_warden_routebyget():
+    try:
+        cnic = request.args.get('cnic')
+
+        if not cnic:
+            return jsonify({"error": "CNIC is required"}), 400
+
+        mesg,code= WardenChowkiController.delete_warden(cnic)
+        return jsonify(mesg),code
     except Exception as exp:
         print(str(exp))
         return jsonify({'error': str(exp)}), 500
@@ -1632,6 +1729,187 @@ def on_duty_wardens(camera_id):
     } for w in wardens]
 
     return jsonify({'status': 'success', 'wardens': result})
+
+####################################################################################
+
+# Get all naka connections              useless
+@app.route('/nakagrapg', methods=['GET'])
+def get_all_nakas():
+    try:
+        return NakaGraphController.get_all_connections()
+    except Exception as exp:
+        return jsonify({'error': str(exp)}), 500
+
+
+# Get naka by ID (query param: ?id=1)
+@app.route('/naka/id', methods=['GET'])
+def get_naka_by_id():
+    try:
+        naka_id = request.args.get('id')
+        if not naka_id:
+            return jsonify({'error': 'Naka ID is required'}), 400
+        return NakaGraphController.get_naka_by_id(naka_id)
+    except Exception as exp:
+        return jsonify({'error': str(exp)}), 500
+
+# Update naka connection
+@app.route('/naka', methods=['PUT'])
+def update_naka():
+    try:
+        data = request.get_json()
+        naka_id = data.get('id')
+        from_id = data.get('FromNakaID')
+        to_id = data.get('ToNakaID')
+        distance = data.get('DistanceKM')
+
+        if not all([naka_id, from_id, to_id, distance]):
+            return jsonify({'error': 'id, FromNakaID, ToNakaID, and DistanceKM are required'}), 400
+
+        return NakaGraphController.update_connection(naka_id, from_id, to_id, distance)
+    except Exception as exp:
+        return jsonify({'error': str(exp)}), 500
+
+# Delete naka connection by name (body param)
+@app.route('/deletelinknaka', methods=['DELETE'])
+def delete_naka():
+    try:
+        data = request.get_json()
+        naka_id = data.get('id')
+        to_naka = data.get('tonakaid')
+        if not naka_id or not to_naka:
+            return jsonify({'error': 'Naka ID and Link Naka id is required'}), 400
+
+        print(naka_id,to_naka)
+        return NakaGraphController.delete_connection(naka_id,to_naka)
+    except Exception as exp:
+        return jsonify({'error': str(exp)}), 500
+
+
+# Delete naka connection by query param (?id=1)
+@app.route('/linknaka/deletebyid', methods=['DELETE'])
+def delete_naka_by_query():
+    try:
+        naka_id = request.args.get('id')
+        to_naka = request.args.get('tonakaid')
+
+        if not naka_id or not to_naka:
+            return jsonify({'error': 'Naka ID and Link Naka id is required as query parameter'}), 400
+        print(naka_id, to_naka)
+        return NakaGraphController.delete_connection(naka_id,to_naka)
+    except Exception as exp:
+        return jsonify({'error': str(exp)}), 500
+
+
+
+# this rule return graph as well as All Naka of custom hops
+
+@app.route('/getgraph', methods=['GET'])
+def initialize_naka_graph():
+    try:
+        data = request.get_json()
+        naka_id = data.get('naka_id')
+        max_hops = data.get('max_hops')
+
+        if naka_id is None or max_hops is None:
+            return jsonify({'error': 'naka_id and max_hops are required'}), 400
+
+        # Load the graph and alerts using the NakaGraphController
+        return NakaGraphController.load_graph_and_alerts(start=naka_id, max_hops=max_hops)
+
+    except Exception as exp:
+        print(f"Error in /getgraph: {str(exp)}")
+        return jsonify({'error': str(exp)}), 500
+
+
+
+
+# @app.route('/naka/<int:naka_id>/nexthops/<int:max_hops>', methods=['GET'])
+# def get_next_hops(naka_id, max_hops):
+#     return NakaGraphController.get_next_hops(naka_id, max_hops)
+
+
+# This Only Show  Next Custom Hobs List of Specific Naka each Hob Seperate
+@app.route('/naka/nexthops', methods=['POST'])
+def get_next_hops():
+    try:
+        data = request.get_json()
+        naka_id = data.get('naka_id')
+        max_hops = data.get('max_hops')
+
+        if naka_id is None or max_hops is None:
+            return jsonify({"error": "naka_id and max_hops are required"}), 400
+
+        return NakaGraphController.get_next_hops(naka_id, max_hops)
+
+    except Exception as exp:
+        print(f"Error in /naka/nexthops: {str(exp)}")
+        return jsonify({'error': str(exp)}), 500
+
+
+@app.route('/linkNakawithnaka', methods=['POST'])
+def add_NakawithNaka():
+    try:
+        data = request.get_json()
+        from_id = data.get('FromNakaID')
+        to_id_list = data.get('ToNakaID')         # Should be a list
+        distance_list = data.get('DistanceKM')    # Should be a list
+
+        # Check if inputs exist and are lists of same length
+        if not all([from_id, to_id_list, distance_list]):
+            return jsonify({'error': 'FromNakaID, ToNakaID, and DistanceKM are required'}), 400
+
+        if not isinstance(to_id_list, list) or not isinstance(distance_list, list):
+            return jsonify({'error': 'ToNakaID and DistanceKM should be lists'}), 400
+
+        if len(to_id_list) != len(distance_list):
+            return jsonify({'error': 'ToNakaID and DistanceKM lists must be the same length'}), 400
+
+        message = NakaGraphController.add_connection(from_id, to_id_list, distance_list)
+        return jsonify(message), 201
+
+    except Exception as exp:
+        print(str(exp))
+        return jsonify({'error': str(exp)}), 500
+
+
+
+@app.route('/getonesidegraph', methods=['GET'])
+def onesidegraph():
+    return jsonify( NakaGraphController.build_graphoneway_from_db())
+
+
+# im using it to get direct naka Connection
+@app.route('/getnakadirectlink', methods=['POST'])  # Changed to POST
+def get_NakaDirection():
+    try:
+        data = request.get_json()
+        naka_id = data.get('FromNakaID')
+
+
+        if not naka_id:
+            return jsonify({'error': 'FromNakaID is required'}), 400
+        print(naka_id)
+        # Load graph and alerts from controller
+        response = NakaGraphController.load_graph_and_alerts(start=naka_id, max_hops=1)
+
+        chowki_details = CameraChowkiController.get_chowkis_by_ids_forNakaLink(response["alerts"])
+
+        # Build final response
+        # response = {
+        #     "alerts": response['alerts'],
+        #     "chowkis": chowki_details,
+        #     "graph": response['graph']
+        # }
+
+        return jsonify(chowki_details), 200
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+    except Exception as exp:
+        print(str(exp))
+        return jsonify({'error': str(exp)}), 500
 
 
 if __name__ == "__main__":

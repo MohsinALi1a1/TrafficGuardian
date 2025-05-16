@@ -145,6 +145,19 @@ class CameraChowkiController:
 
         return result_list
 
+    @staticmethod
+    def get_chowkis_by_ids_forNakaLink(ids):
+        chowkis = Chowki.query.filter(Chowki.id.in_(ids)).all()
+
+        if chowkis:
+            return [{
+                'id': chowki.id,
+                'name': chowki.name,
+                'place_name': chowki.place_id
+            } for chowki in chowkis]
+        else:
+            return {"error": "No Chowkis found for the provided IDs"}
+
     ##################################################CameraChowki#############################################################################
 
     @staticmethod

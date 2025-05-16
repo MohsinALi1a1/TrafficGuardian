@@ -54,7 +54,7 @@ class WardenChowkiController:
 
         db.session.delete(shift)
         db.session.commit()
-        return {'Successfully': f'{shifttype} is successfully deleted'}, 201
+        return {'Successfully': f'{shifttype} is successfully deleted'}, 200
 
     @staticmethod
     def update_shift(shifttype,starttime,endtime):

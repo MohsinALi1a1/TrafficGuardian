@@ -5,3 +5,4 @@ from Controller.ChallanController import ChallanController
 from Controller.YoloController import YoloController
 from Controller.ImageControllerAndNotification import ImageControllerAndNotification
 from Controller.OCR import  OCR
+from Controller.NakaGraphController import NakaGraphController

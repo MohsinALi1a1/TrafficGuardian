@@ -82,7 +82,7 @@ You can implement token-based authentication to secure the endpoints for admin, 
 ## 👨‍💻 Contributors
 
 - **Mohsin Ali** – Backend Developer & AI Integration
-- **Team Members** – (add your teammates)
+
 
 ## 📄 License
 
@@ -94,5 +94,5 @@ This project is part of an academic final year project and is not licensed for c
 
 Have questions or suggestions?
 
-- Email: mohsinali@example.com
+- Email: mohsinali1a1@gmail.com
 - GitHub: [MohsinALi1a1](https://github.com/MohsinALi1a1)

@@ -17,14 +17,110 @@ from Controller import ChallanController,YoloController
 class YoloController:
 
     @staticmethod
-    # Function to calculate center of a box
-    def get_center(box):
-        x1, y1, x2, y2 = box
-        return ((x1 + x2) / 2, (y1 + y2) / 2)
+    def get_center(box_dict):
+        """Returns center (x, y) of a bounding box dictionary."""
+        x_center = (box_dict["x1"] + box_dict["x2"]) / 2
+        y_center = (box_dict["y1"] + box_dict["y2"]) / 2
+        return x_center, y_center
+
     @staticmethod
-    # Function to calculate Euclidean distance
     def euclidean_distance(p1, p2):
+        """Returns Euclidean distance between two points."""
         return math.sqrt((p1[0] - p2[0]) ** 2 + (p1[1] - p2[1]) ** 2)
+
+    @staticmethod
+    def assign_helmets_to_persons_without_canter(image, person_boxes, helmet_boxes, threshold=50):
+        assigned = {}
+        used_helmets = set()
+
+        for i, pbox in enumerate(person_boxes):
+            head_point = (pbox["x1"], pbox["y1"])
+            print(f"\n[DEBUG] Person {i + 1} Head Point (x1, y1): {head_point}")
+
+            min_dist = float('inf')
+            matched_helmet = None
+
+            for j, hbox in enumerate(helmet_boxes):
+                if j in used_helmets:
+                    continue
+
+                helmet_point = (hbox["x1"], hbox["y1"])
+                dx = abs(helmet_point[0] - head_point[0])
+                dy = abs(helmet_point[1] - head_point[1])
+                dist = (dx ** 2 + dy ** 2) ** 0.5
+
+                print(f"[DEBUG] Helmet {j + 1} Point: {helmet_point}, Distance: {dist:.2f}")
+
+                if dist < min_dist and dist < threshold:
+                    min_dist = dist
+                    matched_helmet = j
+                    print(f"[DEBUG] Helmet {j + 1} is closest within threshold ({threshold}).")
+
+            if matched_helmet is not None:
+                assigned[f"person_{i + 1}"] = f"helmet_{matched_helmet + 1}"
+                used_helmets.add(matched_helmet)
+                print(f"[DEBUG] Person {i + 1} assigned Helmet {matched_helmet + 1}")
+            else:
+                assigned[f"person_{i + 1}"] = None
+                print(f"[DEBUG] No helmet assigned to Person {i + 1}")
+
+        # Optional drawing
+        for i, pbox in enumerate(person_boxes):
+            x1, y1, x2, y2 = map(int, [pbox["x1"], pbox["y1"], pbox["x2"], pbox["y2"]])
+            color = (0, 255, 0) if assigned[f"person_{i + 1}"] else (0, 0, 255)
+            label = f"Person {i + 1} - {'Helmet' if assigned[f'person_{i + 1}'] else 'No Helmet'}"
+
+            cv2.rectangle(image, (x1, y1), (x2, y2), color, 2)
+            cv2.putText(image, label, (x1, y1 - 10),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.6, color, 2)
+
+        return assigned
+
+    @staticmethod
+    def assign_helmets_to_persons(image, person_boxes, helmet_boxes, threshold=50):
+        assigned = {}
+        used_helmets = set()
+
+        for i, pbox in enumerate(person_boxes):
+            head_center = ((pbox["x1"] + pbox["x2"]) / 2, pbox["y1"])
+            print(f"\n[DEBUG] Person {i + 1} Head Center: {head_center}")
+
+            min_dist = float('inf')
+            matched_helmet = None
+
+            for j, hbox in enumerate(helmet_boxes):
+                if j in used_helmets:
+                    continue
+
+                helmet_center = YoloController.get_center(hbox)
+                dist = YoloController.euclidean_distance(head_center, helmet_center)
+
+                print(f"[DEBUG] Helmet {j + 1} Center: {helmet_center}, Distance to Head: {dist:.2f}")
+
+                if dist < min_dist and dist < threshold:
+                    min_dist = dist
+                    matched_helmet = j
+                    print(f"[DEBUG] Helmet {j + 1} is currently closest within threshold ({threshold}).")
+
+            if matched_helmet is not None:
+                assigned[f"person_{i + 1}"] = f"helmet_{matched_helmet + 1}"
+                used_helmets.add(matched_helmet)
+                print(f"[DEBUG] Person {i + 1} assigned Helmet {matched_helmet + 1}")
+            else:
+                assigned[f"person_{i + 1}"] = None
+                print(f"[DEBUG] No helmet assigned to Person {i + 1}")
+
+        # Draw annotations
+        for i, pbox in enumerate(person_boxes):
+            x1, y1, x2, y2 = map(int, [pbox["x1"], pbox["y1"], pbox["x2"], pbox["y2"]])
+            color = (0, 255, 0) if assigned[f"person_{i + 1}"] else (0, 0, 255)
+            label = f"Person {i + 1} - {'Helmet' if assigned[f'person_{i + 1}'] else 'No Helmet'}"
+
+            cv2.rectangle(image, (x1, y1), (x2, y2), color, 2)
+            cv2.putText(image, label, (x1, y1 - 10),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.6, color, 2)
+
+        return assigned
 
     @staticmethod
     def parse_detections(prediction_result, target_labels):
@@ -46,7 +142,7 @@ class YoloController:
                 })
         return filtered
     @staticmethod
-    def is_helmet_detected(prediction_result_1, prediction_result_2):
+    def is_helmet_detected(image ,prediction_result_1, prediction_result_2):
         # Step 1: Get helmets from prediction_result_1
         helmet_detections = YoloController.parse_detections(prediction_result_1, target_labels=["helmet"])
 
@@ -68,13 +164,61 @@ class YoloController:
         # Return the categorized detections if needed for further processing
         # return helmet_detections, head_detections, person_detections
 
-        if prediction_result_1.boxes:  # Ensure there are detected boxes
-            for box in prediction_result_1.boxes:
-                class_id = int(box.cls[0])  # Class ID
-                class_name = prediction_result_1.names[class_id]  # Class name
-                if class_name.lower() == "helmet":
-                    return True
-        return False
+        # Assign helmets to persons
+        if not helmet_detections or not person_detections:
+            print("No helmet or person detections found.")
+            return False
+
+        assigned = YoloController.assign_helmets_to_persons(
+            image=image,
+            person_boxes=person_detections,
+            helmet_boxes=helmet_detections,
+            threshold=250  # adjust as needed
+        )
+
+        print("Assignment Results:")
+        for person_id, helmet_id in assigned.items():
+            if helmet_id:
+                print(f"{person_id} is wearing {helmet_id}")
+            else:
+                print(f"{person_id} is NOT wearing a helmet")
+        # assigned_1 = YoloController.assign_helmets_to_persons_without_canter(image=image,
+        #                                                                      person_boxes=person_detections,
+        #                                                                      helmet_boxes=helmet_detections,
+        #                                                                      threshold=230  # adjust as needed
+        #                                                                      )
+        # print("Assignment Results without Center:")
+        # for person_id, helmet_id in assigned_1.items():
+        #     if helmet_id:
+        #         print(f"{person_id} is wearing {helmet_id}")
+        #     else:
+        #         print(f"{person_id} is NOT wearing a helmet")
+        if limit == -1:
+            print("Limit is -1: Only rider (person_1) is required to wear helmet.")
+            person_1_key = "person_1"
+            if person_1_key in assigned and assigned[person_1_key]:
+                return True
+            elif (len(person_detections)>len(head_detections)):
+                return True
+            else:
+                return False
+
+        else:
+            print("Limit != -1: All persons must wear helmets.")
+            for person, helmet in assigned.items():
+                if not helmet:
+                    return False
+            return True
+
+        # # Decision logic
+        # if limit == -1:
+        #     print("Limit is -1: Only rider (person_1) is required to wear helmet.")
+        #     return assigned.get("person_1") is not None
+        # else:
+        #     print("Limit != -1: All persons must wear helmets.")
+        #     return all(helmet for helmet in assigned.values())
+
+
 
     @staticmethod
     # Helmet  motorbike   Head  SideMirror   License Plate
@@ -258,7 +402,7 @@ class YoloController:
 
         for i, result in enumerate(results):
             image = result.orig_img
-            helmet_detected = YoloController.is_helmet_detected(result)
+            helmet_detected = YoloController.is_helmet_detected(image,result)
             side_mirrors_detected = YoloController.is_side_mirrors_detected(result)
             count_head = YoloController.count_object(result, 'head')
             cropped_plates = YoloController.crop_license_plate(result)
@@ -401,9 +545,9 @@ class YoloController:
             for i, result in enumerate(results):
                 print(f"Processing result side {i + 1}")  # Debug print
                 image = result.orig_img
-                helmet_detected = YoloController.is_helmet_detected(result,person_and_bike_result[0])
+                helmet_detected = YoloController.is_helmet_detected(image,result,person_and_bike_result[0])
                 side_mirrors_detected = YoloController.is_side_mirrors_detected(result)
-                count_head = YoloController.count_object(result, 'head')
+                count_head = YoloController.count_object(person_and_bike_result[0], 'person')
                 print(f"Total Head {count_head}")
                 violations = []
                 if not helmet_detected:

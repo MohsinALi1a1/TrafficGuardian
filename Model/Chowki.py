@@ -22,4 +22,18 @@ class Chowki(db.Model):
     #back Relationship
     warden_chowkis = db.relationship("WardenChowki", back_populates="chowki")
 
+    # Back references for the graph
+    from_nakagraphs = db.relationship(
+        'NakaGraph',
+        foreign_keys='NakaGraph.FromNakaID',
+        back_populates='from_naka',
+        cascade="all, delete-orphan"
+    )
+
+    to_nakagraphs = db.relationship(
+        'NakaGraph',
+        foreign_keys='NakaGraph.ToNakaID',
+        back_populates='to_naka',
+        cascade="all, delete-orphan"
+    )
 

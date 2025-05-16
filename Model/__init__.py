@@ -17,3 +17,4 @@ from Model.Challan import Challan
 from Model.ViolationImages import ViolationImages
 from Model.ChallanViolations import ChallanViolations
 from Model.Configure import db,app
+from Model.NakaGraph import NakaGraph
