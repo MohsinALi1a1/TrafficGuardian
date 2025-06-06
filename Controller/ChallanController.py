@@ -3,7 +3,7 @@
 import Controller
 from Controller import CameraChowkiController, OCR, ImageControllerAndNotification
 from Model import User, Vehicle, db, Violation, ViolationFine, ViolationHistory, ViolationDetails, Challan, \
-    ChallanViolations, ViolationImages
+    ChallanViolations, ViolationImages, NakaGraph
 from sqlalchemy.exc import SQLAlchemyError
 from datetime import datetime
 import cv2
@@ -13,6 +13,9 @@ from PIL import Image
 from Model.Configure import app
 from flask import  request ,jsonify
 import re
+
+from Model.Notification import Notification
+
 
 class ChallanController:
     #################################  Vehicle ########################################################
@@ -126,6 +129,27 @@ class ChallanController:
         db.session.commit()
         return {"message": f"User {user.name} updated successfully"}, 201
 
+    @staticmethod
+    def userlogincheck(cnic, password):
+        # Search for the warden using the badge number
+        user = User.query.filter_by(cnic=cnic).first()
+
+        # If warden not found
+        if not user:
+            return {"message": "Cnic number or password does not match"}, 401
+
+        # If passwords are hashed, use this:
+        # if not check_password_hash(warden.password, password):
+
+        # If passwords are stored as plain text (not recommended), use this:
+        if user.password != password:
+            return {"message": "Badge number or password does not match"}, 401
+
+        # Login successful - return relevant data
+        return {
+            "userid": user.id,
+
+        }, 200
     #################################  Violations & Fine ########################################################
 
     @staticmethod
@@ -316,24 +340,26 @@ class ChallanController:
 
     #################################  ViolationsHistory & Its Details ########################################################
     @staticmethod
-    def update_violation_history_status(violation_history_id):
+    def update_violation_history_status(violation_history_id,status):
         try:
             violation_history = db.session.query(ViolationHistory).filter(ViolationHistory.id==violation_history_id).first()
-
+            print(violation_history_id)
             if not violation_history:
+                print("ViolationHistory _id not found for status update")
                 return {"error": "ViolationHistory not found"}, 404
 
-            violation_history.violation_id = "Issue"
+            violation_history.status = status
             db.session.commit()
 
             return {"message": "ViolationHistory status updated to 'Issue'"}, 200
-
+            print("ViolationHistory _id  found  status updated sucessfully")
         except Exception as e:
+            print(f"ViolationHistory   status exception {str(e)}")
             db.session.rollback()
             return {"error": f"Failed to update status: {str(e)}"}, 500
 
     @staticmethod
-    def add_violation_history_and_details(vehicle_id,  location, status, camera_id, violation_ids,image_list):
+    def add_violation_history_and_details(vehicle_id,  location, status, camera_id, violation_ids,image_list,bikenumber=None):
         try:
             # Validate inputs here if necessary
 
@@ -379,7 +405,8 @@ class ChallanController:
                         recipient_type="TrafficWarden",
                         recipient_id=warden.id,
                         type_="Violation Alert",
-                        message="🚨 A violation has been detected in your assigned area. Please review and take action."
+                        message=f"🚨 Vehicle {bikenumber} has committed a violation in your assigned area: {location}. Please review and take action.",
+                        violation_id=violation_history.id
                     )
                     print(f"🔔 Notification sent to Warden ID: {warden.id}")
 
@@ -395,6 +422,76 @@ class ChallanController:
                 "error": "Failed to add violation history and details",
                 "details": str(e)
             }, 500
+
+    @staticmethod
+    def get_custom_hops_naka_of_naka(naka_ids_list, bike, location, maxhops , link_id):
+        visited_nakas = set(naka_ids_list)  # To avoid duplicates
+        current_level = set(naka_ids_list)  # Nakas to explore at this hop
+
+        for _ in range(maxhops):
+            if not current_level:
+                break
+
+            # Query all to_naka where from_naka is in current level
+            next_level_records = db.session.query(NakaGraph.ToNakaID).filter(
+                NakaGraph.FromNakaID.in_(current_level)
+            ).all()
+
+            next_level_nakas = set()
+            for record in next_level_records:
+                to_naka_id = record[0]  # unpack from tuple
+                if to_naka_id not in visited_nakas:
+                    next_level_nakas.add(to_naka_id)
+
+            visited_nakas.update(next_level_nakas)
+            current_level = next_level_nakas  # move to next level
+
+        # Exclude the original starting naka ids
+        naka_list = list(visited_nakas - set(naka_ids_list))
+
+        print("📌 Linked naka(s) found (excluding starting nakas):", naka_list)
+
+        # Send notifications for these linked nakas
+        ChallanController.send_notification_to_linknaka(naka_list, bike, location,link_id)
+        ChallanController.update_violation_history_status(link_id, "Runner")
+        return naka_list
+
+    @staticmethod
+    def send_notification_to_linknaka(naka_ids_list, bikenumber, location ,link_id):
+        try:
+            for naka_id in naka_ids_list:
+                print(f"📡 Processing Naka ID: {naka_id} for violation alert...")  # 👈 Added print here
+
+                try:
+                    # Get on-duty wardens for the current naka
+                    wardens = CameraChowkiController.get_on_duty_wardens_of_naka([naka_id])
+
+                    if not wardens:
+                        print(f"⚠️ No on-duty wardens found at Naka ID: {naka_id}")
+                    else:
+                        for warden in wardens:
+                            try:
+                                response = Controller.ImageControllerAndNotification.add_notification(
+                                    recipient_type="TrafficWarden",
+                                    recipient_id=warden.id,
+                                    type_="Violation Alert",
+                                    message=(
+                                        f"🚨 Vehicle {bikenumber} ran from {location} "
+                                        f"and is coming to your assigned area (Naka ID: {naka_id}). "
+                                        "Be ready to stop it."
+
+                                    ),
+                                    violation_id=link_id
+                                )
+                                print(f"🔔 Notification sent to Warden ID: {warden.id} (Naka ID: {naka_id})")
+                            except Exception as e:
+                                print(
+                                    f"❌ Failed to send notification to Warden ID {warden.id} at Naka ID {naka_id}: {e}")
+                except Exception as inner_e:
+                    print(f"❌ Error retrieving wardens for Naka ID {naka_id}: {inner_e}")
+
+        except Exception as e:
+            print(f"🔥 Error in sending notifications to Link Naka list: {e}")
 
     @staticmethod
     def save_images(image_list, violation_id, base_name="bike"):
@@ -422,36 +519,128 @@ class ChallanController:
             saved_paths.append(clean_path)
 
         return saved_paths
+# this function Get violation history w.r.t to connect naka bottom function is also same but it will work on notification
+    # @staticmethod
+    # def get_violation_history_with_details(naka_id,vehicle_id=None, date=None ):
+    #     try:
+    #         cameras_ids=[]
+    #         query = (
+    #             db.session.query(ViolationHistory)
+    #             .join(ViolationDetails)
+    #         )
+    #
+    #
+    #         if(naka_id):
+    #            camera_list= CameraChowkiController.get_all_linkCamera_with_Chowkibyid(naka_id)
+    #            if camera_list is not None and len(camera_list) > 0:
+    #                # Loop through the camera_list and populate the data
+    #                for camera in camera_list:
+    #                    cameras_ids.append(camera['camera_id'])
+    #                if vehicle_id:
+    #                    query = query.filter(ViolationHistory.vehicle_id == vehicle_id)
+    #                if date:
+    #                    query = query.filter(ViolationHistory.date == date)
+    #                if cameras_ids:
+    #                    query = query.filter(ViolationHistory.camera_id.in_(cameras_ids))
+    #                    violation_histories = query.all()
+    #
+    #            else:
+    #                violation_histories = []
+    #                print("No cameras found for this naka_id.")
+    #
+    #
+    #
+    #         if not violation_histories:
+    #             return {"message": "No violation records found."}
+    #
+    #         result = []
+    #         for history in violation_histories:
+    #             violation_details = [
+    #                 {
+    #                     "violation_name": db.session.query(Violation.name).filter(Violation.id==detail.violation_id).scalar()
+    #
+    #                 }
+    #                 for detail in history.violation_details
+    #             ]
+    #
+    #             vehicle= ChallanController.get_vehicle_by_id(history.vehicle_id)
+    #
+    #             result.append({
+    #                 "id": history.id,
+    #                 "vehicle_id": history.vehicle_id,
+    #                 "licenseplate":vehicle['licenseplate'],
+    #                 "vehicletype":vehicle['vehicletype'],
+    #                 "violation_datetime": history.violation_datetime,
+    #                 "location": history.location,
+    #                 "status": history.status,
+    #                 "camera_id": history.camera_id,
+    #                 "violation_details": violation_details
+    #             })
+    #
+    #         return {
+    #             "violation_histories": result
+    #         }
+    #
+    #     except SQLAlchemyError as e:
+    #         print(f"Error occurred: {e}")
+    #         return {
+    #             "error": "Failed to retrieve violation history with details",
+    #             "details": str(e)
+    #         }
 
+    #this Function i create if notification receive then violation details are shown
     @staticmethod
-    def get_violation_history_with_details(naka_id,vehicle_id=None, date=None ):
+    def get_violation_history_with_details(naka_id=None, vehicle_id=None, date=None, warden_id=None):
         try:
-            cameras_ids=[]
-            query = (
-                db.session.query(ViolationHistory)
-                .join(ViolationDetails)
-            )
+            cameras_ids = []
+            violation_histories = []
 
+            # Case 1: If warden_id is provided
+            if warden_id:
+                # Get all violation_history_ids where recipient is the warden
+                notification_query = (
+                    db.session.query(Notification.link_id)
+                    .filter(Notification.recipient_id == warden_id)
+                    .filter(Notification.recipient_type == 'TrafficWarden')
+                )
+                violation_ids = [row[0] for row in notification_query.all()]
 
-            if(naka_id):
-               camera_list= CameraChowkiController.get_all_linkCamera_with_Chowkibyid(naka_id)
-               if camera_list is not None and len(camera_list) > 0:
-                   # Loop through the camera_list and populate the data
-                   for camera in camera_list:
-                       cameras_ids.append(camera['camera_id'])
-                   if vehicle_id:
-                       query = query.filter(ViolationHistory.vehicle_id == vehicle_id)
-                   if date:
-                       query = query.filter(ViolationHistory.date == date)
-                   if cameras_ids:
-                       query = query.filter(ViolationHistory.camera_id.in_(cameras_ids))
-                       violation_histories = query.all()
+                if not violation_ids:
+                    return {"message": "No violation notifications found for this warden."}
 
-               else:
-                   violation_histories = []
-                   print("No cameras found for this naka_id.")
+                # Fetch full violation history records
+                query = (
+                    db.session.query(ViolationHistory)
+                    .join(ViolationDetails)
+                    .filter(ViolationHistory.id.in_(violation_ids))
+                )
 
+                violation_histories = query.all()
 
+            # Case 2: If naka_id is provided (existing logic)
+            elif naka_id:
+                camera_list = CameraChowkiController.get_all_linkCamera_with_Chowkibyid(naka_id)
+
+                if camera_list is not None and len(camera_list) > 0:
+                    for camera in camera_list:
+                        cameras_ids.append(camera['camera_id'])
+
+                    query = (
+                        db.session.query(ViolationHistory)
+                        .join(ViolationDetails)
+                    )
+
+                    if vehicle_id:
+                        query = query.filter(ViolationHistory.vehicle_id == vehicle_id)
+                    if date:
+                        query = query.filter(ViolationHistory.date == date)
+                    if cameras_ids:
+                        query = query.filter(ViolationHistory.camera_id.in_(cameras_ids))
+
+                    violation_histories = query.all()
+                else:
+                    print("No cameras found for this naka_id.")
+                    violation_histories = []
 
             if not violation_histories:
                 return {"message": "No violation records found."}
@@ -460,19 +649,20 @@ class ChallanController:
             for history in violation_histories:
                 violation_details = [
                     {
-                        "violation_name": db.session.query(Violation.name).filter(Violation.id==detail.violation_id).scalar()
-
+                        "violation_name": db.session.query(Violation.name)
+                        .filter(Violation.id == detail.violation_id)
+                        .scalar()
                     }
                     for detail in history.violation_details
                 ]
 
-                vehicle= ChallanController.get_vehicle_by_id(history.vehicle_id)
+                vehicle = ChallanController.get_vehicle_by_id(history.vehicle_id)
 
                 result.append({
                     "id": history.id,
                     "vehicle_id": history.vehicle_id,
-                    "licenseplate":vehicle['licenseplate'],
-                    "vehicletype":vehicle['vehicletype'],
+                    "licenseplate": vehicle['licenseplate'],
+                    "vehicletype": vehicle['vehicletype'],
                     "violation_datetime": history.violation_datetime,
                     "location": history.location,
                     "status": history.status,
@@ -624,7 +814,7 @@ class ChallanController:
                     db.session.add(new_challan_violation)
 
             db.session.commit()
-            ChallanController.update_violation_history_status(violation_id)
+            ChallanController.update_violation_history_status(violation_history_id,"Issue")
             return True, new_challan.id
 
         except Exception as exp:
@@ -859,7 +1049,7 @@ class ChallanController:
                     response, code = ChallanController.add_violation_history_and_details(bike['id'],
                                                                                          camera_location, status,
                                                                                          cam_id,
-                                                                                         violations_ids,image_list)
+                                                                                         violations_ids,image_list ,bikenumber)
 
                 except Exception as e:
                     print(f"error in add Violation History : {str(e)}")

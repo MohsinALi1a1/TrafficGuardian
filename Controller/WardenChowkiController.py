@@ -296,13 +296,14 @@ class WardenChowkiController:
                 for shift_index in range(1, total_shifts + 1):
                     # Your code logic here
                     random.shuffle(available_wardens)
+                    shift = shifts[shift_index - 1]
 
                     if len(available_wardens) < wardens_per_chowki:
                         raise ValueError("Not enough wardens available for assignment.")
 
                     assigned_wardens = available_wardens[:wardens_per_chowki]
                     schedule[chowki_name]["shifts"].append({
-                        "shift_index": shift_index,
+                        "shift_index": shift["id"],
                         "assigned_wardens": assigned_wardens
                     })
 

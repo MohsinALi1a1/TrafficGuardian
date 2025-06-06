@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import List
 
 from Model import Camera, Place, Direction, db, Chowki, CameraChowki, City, WardenChowki, Shift, TrafficWarden
 
@@ -596,6 +597,76 @@ class CameraChowkiController:
         on_duty_wardens = db.session.query(TrafficWarden).filter(TrafficWarden.id.in_(on_duty_warden_ids)).all()
         print(f"\n✅ Total On-Duty Wardens Found: {len(on_duty_wardens)}")
 
+        for warden in on_duty_wardens:
+            print(f"👮‍♂️ Warden ID: {warden.id}, Name: {warden.name}")
+
+        return on_duty_wardens
+
+    @staticmethod
+    def get_on_duty_wardens_of_naka(chowki_ids: List[int]):
+        # Step 1: Get current system time
+        now = datetime.now().time()
+        print(f"🕒 Current System Time: {now}")
+
+        if not chowki_ids:
+            print("⚠️ No chowkis found for this camera.")
+            return []
+
+        print(f"✅ Connected Chowki IDs: {chowki_ids}")
+
+        # Step 2: Join WardenChowki and Shift table for those chowkis
+        joined = db.session.query(
+            WardenChowki.warden_id,
+            WardenChowki.shift_id,
+            WardenChowki.chowki_id,
+            Shift.start_time,
+            Shift.end_time
+        ).join(
+            Shift, WardenChowki.shift_id == Shift.id
+        ).filter(
+            WardenChowki.chowki_id.in_(chowki_ids)
+        ).all()
+
+        if not joined:
+            print("⚠️ No warden-shift assignments found for connected chowkis.")
+            return []
+
+        print(f"📋 Total Warden-Shift Entries Found: {len(joined)}")
+
+        # Step 3: Filter wardens currently on duty
+        on_duty_warden_ids = []
+        for entry in joined:
+            shift_start = entry.start_time
+            shift_end = entry.end_time
+
+            print(f"\n🧑‍✈️ Warden ID: {entry.warden_id}, Chowki ID: {entry.chowki_id}")
+            print(f"⏰ Shift Start: {shift_start}, End: {shift_end}")
+
+            if shift_start <= shift_end:
+                # Normal shift
+                if shift_start <= now <= shift_end:
+                    print("✅ Warden is on duty.")
+                    on_duty_warden_ids.append(entry.warden_id)
+                else:
+                    print("❌ Warden is NOT on duty.")
+            else:
+                # Overnight shift (e.g., 22:00 to 06:00)
+                if now >= shift_start or now <= shift_end:
+                    print("🌙✅ Warden is on overnight duty.")
+                    on_duty_warden_ids.append(entry.warden_id)
+                else:
+                    print("🌙❌ Warden is NOT on overnight duty.")
+
+        if not on_duty_warden_ids:
+            print("⚠️ No wardens currently on duty.")
+            return []
+
+        # Step 4: Get full warden details
+        on_duty_wardens = db.session.query(TrafficWarden).filter(
+            TrafficWarden.id.in_(on_duty_warden_ids)
+        ).all()
+
+        print(f"\n✅ Total On-Duty Wardens Found: {len(on_duty_wardens)}")
         for warden in on_duty_wardens:
             print(f"👮‍♂️ Warden ID: {warden.id}, Name: {warden.name}")
 

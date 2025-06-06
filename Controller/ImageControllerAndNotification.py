@@ -13,7 +13,7 @@ class ImageControllerAndNotification:
 
     # Add a new notification
     @staticmethod
-    def add_notification(recipient_type, recipient_id, type_, message):
+    def add_notification(recipient_type, recipient_id, type_, message,violation_id):
         try:
             notification = Notification(
                 recipient_type=recipient_type,
@@ -21,7 +21,8 @@ class ImageControllerAndNotification:
                 type=type_,
                 message=message,
                 created_at=datetime.utcnow(),
-                is_read=False
+                is_read=False,
+                link_id=violation_id
             )
             db.session.add(notification)
             db.session.commit()

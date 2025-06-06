@@ -1,7 +1,15 @@
 import io
 import os
+from pydoc import locate
+import socket
+
 from PIL import Image
 from datetime import datetime
+from waitress import serve
+import Model.Configure
+
+
+import Controller
 from Model.Configure import app
 from flask import  request ,jsonify, send_from_directory
 from Controller import LocationController, ChallanController, ImageControllerAndNotification, NakaGraphController
@@ -1130,7 +1138,7 @@ def get_all_users():
         return jsonify({'error': str(exp)}), 500
 
 
-@app.route('/userbyid', methods=['GET'])
+@app.route('/userbyid', methods=['POST'])
 def get_user_by_id():
     try:
         data = request.get_json()
@@ -1203,6 +1211,29 @@ def update_user():
     except Exception as exp:
         return jsonify({'error': str(exp)}), 500
 
+@app.route('/Userlogin', methods=['POST'])
+def userlogin():
+    try:
+        if not request.is_json:
+            return jsonify({"error": "Request must be in JSON format"}), 400
+
+        data = request.get_json()
+        cnic = data.get('Cnic')
+        password = data.get('password')
+        print(cnic)
+        print(password)
+
+        if not cnic or not password:
+            return jsonify({"error": "Badge Number and Password are required"}), 400
+
+        response, code = ChallanController.userlogincheck(cnic, password)
+        print(response)
+        return jsonify(response), code
+
+    except Exception as exp:
+        print(str(exp))
+        return jsonify({'error': str(exp)}), 500
+
     ########################################  Violations  ############################################
 # Route to get all violations with fines
 @app.route('/violations', methods=['GET'])
@@ -1271,8 +1302,9 @@ def update_violation():
         fine=data.get('newfine')
         start_date =data.get('start_date')
         end_date = data.get('end_date')
+        print(start_date)
 
-        result = ChallanController.update_violation(violation_id, new_name, new_description ,limit_value,fine,start_date, end_date)
+        result,code = ChallanController.update_violation(violation_id, new_name, new_description ,limit_value,fine,start_date, end_date)
         return jsonify(result)
     except Exception as exp:
         print(str(exp))
@@ -1351,9 +1383,10 @@ def get_violation_records():
         vehicle_id = data.get('vehicle_id')
         date = data.get('date')
         camera_id = data.get('camera_id')
-        if not chowki_id:
-            return jsonify({"error":"Plz Pass Chowki ID"})
-        result = ChallanController.get_violation_history_with_details(chowki_id,vehicle_id, date)
+        warden_id=data.get('warden_id')
+        if not chowki_id and not warden_id:
+            return jsonify({"error":"Plz Pass Chowki ID or warden id"})
+        result = ChallanController.get_violation_history_with_details(chowki_id,vehicle_id, date,warden_id)
         return jsonify(result)
     except Exception as exp:
         return jsonify({'error': str(exp)}), 500
@@ -1416,6 +1449,16 @@ def create_challan():
         )
 
         if success:
+            response = Controller.ImageControllerAndNotification.add_notification(
+                recipient_type="User",
+                recipient_id=violator_cnic,
+                type_="Violation Alert",
+                message=f"⚠️ {violator_name}, your vehicle ({vehicle_number}) has committed a traffic violation .check your challan details."
+
+            ,violation_id=violation_history_id
+            )
+            print(f"🔔 Notification Generated for Violator with Cnic: {violator_cnic}")
+
             return jsonify({"success": True, "challan_id": challan_id}), 201
         else:
             return jsonify({"error": "Failed to add challan record"}), 500
@@ -1431,6 +1474,8 @@ def retrieve_challans():
         challan_id = data.get('challan_id')
         user_id = data.get('user_id')
         warden_id = data.get('warden_id')
+
+        print(user_id)
 
         success, result = ChallanController.get_challans(challan_id, user_id, warden_id)
 
@@ -1716,6 +1761,23 @@ def mark_notification(notification_id):
     return jsonify(result)
 
 
+@app.route('/getnotificationsforuser', methods=['POST'])
+def get_all_notifications_user():
+    data = request.get_json()
+
+    recipient_type = data.get('recipient_type')
+    recipient_id = data.get('recipient_id')
+
+    print(recipient_type)
+    print(recipient_id)
+
+    result = ImageControllerAndNotification.get_notifications(
+        recipient_type=recipient_type,
+        recipient_id=recipient_id
+    )
+
+    return jsonify(result)
+
 @app.route('/on_duty_wardens/<int:camera_id>', methods=['GET'])
 def on_duty_wardens(camera_id):
       # if your function is in another file
@@ -1877,6 +1939,9 @@ def add_NakawithNaka():
 def onesidegraph():
     return jsonify( NakaGraphController.build_graphoneway_from_db())
 
+@app.route('/gettwosidegraph', methods=['GET'])
+def twosidegraph():
+    return jsonify( NakaGraphController.build_graph_from_db())
 
 # im using it to get direct naka Connection
 @app.route('/getnakadirectlink', methods=['POST'])  # Changed to POST
@@ -1911,6 +1976,52 @@ def get_NakaDirection():
         print(str(exp))
         return jsonify({'error': str(exp)}), 500
 
+@app.route('/testing_get_naka', methods=['POST'])  # Changed to POST
+def get_testing():
+    try:
+        data = request.get_json()
+        naka_id = data.get('FromNakaID')
+        bike_number = data.get('bike')
+        maxhops = data.get('hops')
+        location=data.get('location')
+        violationhistory_id=data.get('violationhistory_id')
+        if not maxhops:
+            maxhops=1
+        if not naka_id or not bike_number or not location or not violationhistory_id:
+            return jsonify({'error': 'FromNakaID ,location and bike Number  and violationhistory_id is required '}), 400
+        print(naka_id)
+        # Load graph and alerts from controller
+        response = ChallanController.get_custom_hops_naka_of_naka([naka_id],bike_number, location,maxhops,violationhistory_id)
 
-if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=4321, debug=True)
+
+        return jsonify(response), 200
+
+    except Exception as e:
+        print(str(e))
+        return jsonify({'error': str(e)}), 500
+
+
+    except Exception as exp:
+        print(str(exp))
+        return jsonify({'error': str(exp)}), 500
+#
+# if __name__ == "__main__":
+#     app.run(host='0.0.0.0', port=4321, debug=True)
+def get_local_ip():
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    try:
+        # doesn't have to be reachable
+        s.connect(('10.255.255.255', 1))
+        IP = s.getsockname()[0]
+    except Exception:
+        IP = '127.0.0.1'
+    finally:
+        s.close()
+    return IP
+local_ip = get_local_ip()
+port = 4321
+print(f" * Running on local IP: http://{local_ip}:{port}")
+print(f" * Serving on all interfaces: http://0.0.0.0:{port}")
+
+serve(Model.Configure.app, host='0.0.0.0', port=4321, threads=10)
+
