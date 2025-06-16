@@ -1638,41 +1638,65 @@ def upload_image():
 
 # In-memory image storage dictionary
 camera_images_list = [] # Format: [{'camera_id': image_file}]
+
+import traceback
+
 @app.route('/upload-multicameraimages', methods=['POST'])
 def upload_images():
-    indices_str = request.form.get('image_indices', '')
-    indices = indices_str.split(',') if indices_str else []
+    try:
+        print("==> Incoming request to /upload-multicameraimages")
+        print("Form Data:", request.form)
+        print("Files Received:", request.files)
 
-    uploaded_info = []
-    camera_images_list = []  # Declare here
+        indices_str = request.form.get('image_indices', '')
+        indices = indices_str.split(',') if indices_str else []
 
-    for i, image_file in enumerate(request.files.getlist('images')):
-        if i < len(indices):
-            camera_id = indices[i]
-        else:
-            camera_id = str(i)
+        print(f"Parsed indices: {indices}")
 
-        if image_file.filename != '':
-            image = Image.open(io.BytesIO(image_file.read()))
+        uploaded_info = []
+        camera_images_list = []
 
-            camera_images_list.append({
-                "cam_id": camera_id,
-                "image": image  # Store actual image
-            })
+        files = request.files.getlist('images')
+        print(f"Number of images received: {len(files)}")
 
-            uploaded_info.append({
-                'camera_id': camera_id,
-                'filename': image_file.filename,
-                'status': 'stored in memory'
-            })
+        for i, image_file in enumerate(files):
+            if i < len(indices):
+                camera_id = indices[i]
+            else:
+                camera_id = str(i)
 
-    # Call the detection function
-    response ,code=ChallanController.autoviolationdetection_fromcameraimage(camera_images_list)
-    return response,code
-    # return jsonify({
-    #     'message': 'Images received and stored in memory',
-    #     'uploaded': uploaded_info
-    # })
+            print(f"Processing image {i}: camera_id={camera_id}, filename={image_file.filename}")
+
+            if image_file.filename != '':
+                try:
+                    image = Image.open(io.BytesIO(image_file.read()))
+                    camera_images_list.append({
+                        "cam_id": camera_id,
+                        "image": image
+                    })
+
+                    uploaded_info.append({
+                        'camera_id': camera_id,
+                        'filename': image_file.filename,
+                        'status': 'stored in memory'
+                    })
+
+                except Exception as img_err:
+                    print(f"[ERROR] Failed to read image {i}: {img_err}")
+                    continue
+
+        print("Calling detection logic with images:")
+        print(f"camera_images_list: {[item['cam_id'] for item in camera_images_list]}")
+
+        # Call the detection function
+        response, code = ChallanController.autoviolationdetection_fromcameraimage(camera_images_list)
+        print("Detection completed. Returning response.")
+        return response, code
+
+    except Exception as e:
+        print("[ERROR] Exception in /upload-multicameraimages:", str(e))
+        traceback.print_exc()
+        return jsonify({"error": str(e)}), 500
 
 
 @app.route('/get-images/<int:id>', methods=['GET'])
@@ -1846,6 +1870,20 @@ def delete_naka():
     except Exception as exp:
         return jsonify({'error': str(exp)}), 500
 
+# Delete naka connection by name (now using GET with query parameters)
+@app.route('/rdeletelinknaka', methods=['DELETE'])
+def rdelete_naka():
+    try:
+        naka_id = request.args.get('id')
+        to_naka = request.args.get('tonakaid')
+        if not naka_id or not to_naka:
+            return jsonify({'error': 'Naka ID and Link Naka ID are required'}), 400
+
+        print(naka_id, to_naka)
+        return NakaGraphController.delete_connection(naka_id, to_naka)
+    except Exception as exp:
+        return jsonify({'error': str(exp)}), 500
+
 
 # Delete naka connection by query param (?id=1)
 @app.route('/linknaka/deletebyid', methods=['DELETE'])
@@ -1926,8 +1964,8 @@ def add_NakawithNaka():
         if len(to_id_list) != len(distance_list):
             return jsonify({'error': 'ToNakaID and DistanceKM lists must be the same length'}), 400
 
-        message = NakaGraphController.add_connection(from_id, to_id_list, distance_list)
-        return jsonify(message), 201
+        message,code = NakaGraphController.add_connection(from_id, to_id_list, distance_list)
+        return jsonify(message), code
 
     except Exception as exp:
         print(str(exp))
@@ -2004,24 +2042,24 @@ def get_testing():
     except Exception as exp:
         print(str(exp))
         return jsonify({'error': str(exp)}), 500
-#
-# if __name__ == "__main__":
-#     app.run(host='0.0.0.0', port=4321, debug=True)
-def get_local_ip():
-    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    try:
-        # doesn't have to be reachable
-        s.connect(('10.255.255.255', 1))
-        IP = s.getsockname()[0]
-    except Exception:
-        IP = '127.0.0.1'
-    finally:
-        s.close()
-    return IP
-local_ip = get_local_ip()
-port = 4321
-print(f" * Running on local IP: http://{local_ip}:{port}")
-print(f" * Serving on all interfaces: http://0.0.0.0:{port}")
 
-serve(Model.Configure.app, host='0.0.0.0', port=4321, threads=10)
+if __name__ == "__main__":
+    app.run(host='0.0.0.0', port=4321, debug=True)
+# def get_local_ip():
+#     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+#     try:
+#         # doesn't have to be reachable
+#         s.connect(('10.255.255.255', 1))
+#         IP = s.getsockname()[0]
+#     except Exception:
+#         IP = '127.0.0.1'
+#     finally:
+#         s.close()
+#     return IP
+# local_ip = get_local_ip()
+# port = 4321
+# print(f" * Running on local IP: http://{local_ip}:{port}")
+# print(f" * Serving on all interfaces: http://0.0.0.0:{port}")
+#
+# serve(Model.Configure.app, host='0.0.0.0', port=4321, threads=10)
 

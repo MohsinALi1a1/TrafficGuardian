@@ -157,7 +157,7 @@ class CameraChowkiController:
                 'place_name': chowki.place_id
             } for chowki in chowkis]
         else:
-            return {"error": "No Chowkis found for the provided IDs"}
+            return {"error": "No LinkNaka found"}
 
     ##################################################CameraChowki#############################################################################
 

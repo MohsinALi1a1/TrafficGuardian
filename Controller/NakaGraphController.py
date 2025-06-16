@@ -119,7 +119,7 @@ class NakaGraphController:
         """Add multiple Naka connections to the DB."""
         try:
             if len(to_id_list) != len(distance_list):
-                return jsonify({'error': 'ToNakaID and DistanceKM lists must be of the same length'}), 400
+                return {'error': 'ToNakaID and DistanceKM lists must be of the same length'}, 400
 
             for to_id, distance in zip(to_id_list, distance_list):
                 naka = NakaGraph(FromNakaID=from_id, ToNakaID=to_id, DistanceKM=distance)

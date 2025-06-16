@@ -931,6 +931,7 @@ class ChallanController:
 
     # Ensure the upload folder exists
     os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
     def autoviolationdetection_fromcameraimage(camera_images):
         try:
 
