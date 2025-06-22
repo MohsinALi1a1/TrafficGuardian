@@ -99,6 +99,17 @@ class WardenChowkiController:
         else:
             return {"error": "Warden not found"}
 
+    @staticmethod
+    def get_warden_by_id(warden_id):
+        warden = db.session.query(TrafficWarden).filter(TrafficWarden.id == warden_id).first()
+        if warden:
+            return {'id': warden.id, 'name': warden.name,    'image_path':warden.image_path,'badge_number': warden.badge_number,
+                 'address': warden.address, 'cnic': warden.cnic, 'email': warden.email,
+                 'mobile_number': warden.mobile_number,
+                 'city_Name': LocationController.get_city_name_by_id(warden.city_id)},200
+        else:
+            return {"error": "Warden not found"},404
+
 
     @staticmethod
     def generate_temp_password(length=8):

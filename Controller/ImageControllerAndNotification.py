@@ -49,7 +49,8 @@ class ImageControllerAndNotification:
             "type": n.type,
             "message": n.message,
             "created_at": n.created_at.strftime('%Y-%m-%d %H:%M:%S'),
-            "is_read": n.is_read
+            "is_read": n.is_read,
+            "link_id":n.link_id
         } for n in notifications]
         except Exception as e:
             print( str(e))

@@ -882,6 +882,16 @@ def get_warden_by_cnic():
         return jsonify({'error': str(exp)}), 500
 
 
+@app.route('/wardentbyid', methods=['POST'])
+def get_warden_by_id():
+    try:
+        data = request.get_json()
+        warden_id = data.get('id')
+        warden,code = WardenChowkiController.get_warden_by_id(warden_id)
+        return jsonify(warden),code
+    except Exception as exp:
+        return jsonify({'error': str(exp)}), 500
+
 
 @app.route('/addtrafficwarden', methods=['POST'])
 def add_warden():
@@ -2061,5 +2071,5 @@ if __name__ == "__main__":
 # print(f" * Running on local IP: http://{local_ip}:{port}")
 # print(f" * Serving on all interfaces: http://0.0.0.0:{port}")
 #
-# serve(Model.Configure.app, host='0.0.0.0', port=4321, threads=10)
+# serve(Model.Configure.app, host='0.0.0.0', port=4321, threads=50)
 

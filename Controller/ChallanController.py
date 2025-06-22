@@ -1,4 +1,4 @@
-
+from sqlalchemy import desc
 
 import Controller
 from Controller import CameraChowkiController, OCR, ImageControllerAndNotification
@@ -615,7 +615,7 @@ class ChallanController:
                     .filter(ViolationHistory.id.in_(violation_ids))
                 )
 
-                violation_histories = query.all()
+                violation_histories = query.order_by(desc(ViolationHistory.id)).all()
 
             # Case 2: If naka_id is provided (existing logic)
             elif naka_id:
@@ -637,7 +637,7 @@ class ChallanController:
                     if cameras_ids:
                         query = query.filter(ViolationHistory.camera_id.in_(cameras_ids))
 
-                    violation_histories = query.all()
+                    violation_histories = query.order_by(desc(ViolationHistory.id)).all()
                 else:
                     print("No cameras found for this naka_id.")
                     violation_histories = []
