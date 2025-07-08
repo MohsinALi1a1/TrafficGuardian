@@ -136,13 +136,14 @@ class CameraChowkiController:
         result_list = []
         for row in results:
             result_list.append({
-                'city_name': row.city_name,
+
                 'place_name': row.place_name,
-                'chowki_id': row.chowki_id,
-                'chowki_name': row.chowki_name,
+                'id': row.chowki_id,
+                'name': row.chowki_name,
                 # Include linked_cameras if added in the query
                 # 'linked_cameras': row.linked_cameras
             })
+
 
         return result_list
 

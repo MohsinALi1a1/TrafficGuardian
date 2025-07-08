@@ -11,6 +11,8 @@ from PIL import Image
 import cv2
 import math
 from ultralytics import YOLO
+
+import Controller
 from Controller import ChallanController,YoloController
 
 
@@ -157,7 +159,7 @@ class YoloController:
         print(f"Heads Detected: {len(head_detections)}")
         print(f"Persons Detected: {len(person_detections)}")
 
-        violation_record = ChallanController.get_violation_by_id(1)
+        violation_record = Controller.ChallanController.get_violation_by_id(1)
         id = violation_record['id']
         limit = violation_record['limitValue']
 
@@ -293,7 +295,7 @@ class YoloController:
                 - updated_violation_record: Updated record if any change needed, else None
         """
 
-        violation_record= ChallanController.get_violation_by_id(2)
+        violation_record= Controller.ChallanController.get_violation_by_id(2)
         id=violation_record['id']
         limit=violation_record['limitValue']
 
@@ -448,11 +450,11 @@ class YoloController:
             dsize = (new_width, new_height)
             resized_image = cv2.resize(image, dsize)
 
-            # Display the final image
-            cv2.imshow(f"Detection Result {i}", resized_image)
-
-            cv2.waitKey(0)
-            cv2.destroyAllWindows()
+            # # Display the final image
+            # cv2.imshow(f"Detection Result {i}", resized_image)
+            #
+            # cv2.waitKey(0)
+            # cv2.destroyAllWindows()
 
             # Append violations and cropped license plate (if detected)
             violations_and_plates.append({
@@ -461,6 +463,37 @@ class YoloController:
             })
 
         return violations_and_plates
+
+
+    @staticmethod
+    def apply_clahe_on_plate_crop(crop_bgr):
+        """
+        Apply CLAHE (Contrast Limited Adaptive Histogram Equalization) to enhance
+        license plate image before OCR. Works best for grayscale or low-light images.
+
+        Args:
+            crop_bgr (numpy.ndarray): The cropped license plate image (BGR format).
+
+        Returns:
+            numpy.ndarray: The enhanced license plate image (BGR format).
+        """
+        # Convert BGR to LAB color space
+        lab = cv2.cvtColor(crop_bgr, cv2.COLOR_BGR2LAB)
+
+        # Split LAB channels
+        l, a, b = cv2.split(lab)
+
+        # Apply CLAHE to the L (lightness) channel
+        clahe = cv2.createCLAHE(clipLimit=3.0, tileGridSize=(8, 8))
+        cl = clahe.apply(l)
+
+        # Merge the enhanced L channel back with A and B
+        enhanced_lab = cv2.merge((cl, a, b))
+
+        # Convert back to BGR
+        enhanced_bgr = cv2.cvtColor(enhanced_lab, cv2.COLOR_LAB2BGR)
+
+        return enhanced_bgr
 
     @staticmethod
     def detect_violations_from_frontImage(source):

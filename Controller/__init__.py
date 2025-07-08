@@ -3,6 +3,8 @@ from Controller.CameraChowkiController import CameraChowkiController
 from Controller.WardenChowkiController import WardenChowkiController
 from Controller.ChallanController import ChallanController
 from Controller.YoloController import YoloController
+from Controller.FeatureExtraction import FeatureExtraction
 from Controller.ImageControllerAndNotification import ImageControllerAndNotification
 from Controller.OCR import  OCR
 from Controller.NakaGraphController import NakaGraphController
+from Controller.StolenBikeController import StolenBikeController

@@ -21,6 +21,8 @@ class ViolationHistory(db.Model):
     violation_datetime = db.Column(db.DateTime, server_default=func.current_timestamp(), nullable=False)
     location = db.Column(db.String(255), nullable=True)
     status = db.Column(db.String(50), default='Pending', nullable=True)
+    ViolatorStatus = db.Column(db.String(50), default='Normal', nullable=True)
+    CatchLocation= db.Column(db.String(255), nullable=True)
     camera_id = db.Column(db.Integer, db.ForeignKey('Camera.id'), nullable=True)
 
     # Relationships

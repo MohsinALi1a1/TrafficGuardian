@@ -181,4 +181,26 @@ class NakaGraphController:
 
 
 
+    @staticmethod
+    def get_naka_graph_for_flutter():
+        naka_graphs = NakaGraph.query.all()
 
+        nodes = set()
+        edges = []
+
+        for naka in naka_graphs:
+            from_id = naka.FromNakaID
+            to_id = naka.ToNakaID
+
+            nodes.add(from_id)
+            nodes.add(to_id)
+
+            edges.append({
+                "from": from_id,
+                "to": to_id
+            })
+
+        return jsonify({
+            "nodes": list(nodes),
+            "edges": edges
+        }), 200

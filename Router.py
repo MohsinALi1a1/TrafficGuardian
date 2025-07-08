@@ -12,7 +12,8 @@ import Model.Configure
 import Controller
 from Model.Configure import app
 from flask import  request ,jsonify, send_from_directory
-from Controller import LocationController, ChallanController, ImageControllerAndNotification, NakaGraphController
+from Controller import LocationController, ChallanController, ImageControllerAndNotification, NakaGraphController, \
+    StolenBikeController
 from Controller import CameraChowkiController
 from Controller import WardenChowkiController
 from Controller import YoloController
@@ -505,6 +506,23 @@ def get_all_chowki():
     except Exception as exp:
         return jsonify({'error': str(exp)}), 500
 
+
+@app.route('/chowkiincity', methods=['POST'])
+def get_all_chowki_incity():
+    try:
+        data = request.get_json()
+        city_name = data.get('cityname')
+
+        print(city_name )
+        if not city_name :
+            return jsonify({"error": "city name  is required"}), 400
+        city_name.title()
+        chowki= CameraChowkiController.get_all_Chowki_bycity(city_name)
+        if not chowki:
+            return jsonify({"error": f"No Chowki found for the specified Place {city_name}"}), 404
+        return jsonify(chowki)
+    except Exception as exp:
+        return jsonify({'error': str(exp)}), 500
 @app.route('/chowkibyid', methods=['GET'])
 def get_chowki_by_id():
     try:
@@ -871,6 +889,9 @@ def get_warden_in_city():
         print(str(exp))
         return jsonify({'error': str(exp)}), 500
 
+
+
+
 @app.route('/wardentbycnic', methods=['GET'])
 def get_warden_by_cnic():
     try:
@@ -888,6 +909,17 @@ def get_warden_by_id():
         data = request.get_json()
         warden_id = data.get('id')
         warden,code = WardenChowkiController.get_warden_by_id(warden_id)
+        return jsonify(warden),code
+    except Exception as exp:
+        return jsonify({'error': str(exp)}), 500
+
+
+@app.route('/unassignwardenincity', methods=['POST'])
+def get_unassignwarden():
+    try:
+        data = request.get_json()
+        city_name = data.get('cityname')
+        warden,code = WardenChowkiController.get_all_unassigned_wardens(city_name)
         return jsonify(warden),code
     except Exception as exp:
         return jsonify({'error': str(exp)}), 500
@@ -1180,11 +1212,12 @@ def add_user():
         cnic = data.get('cnic')
         mobilenumber = data.get('mobilenumber')
         email = data.get('email')
+        password=data.get('password')
 
-        if not name or not cnic or not mobilenumber:
-            return jsonify({"error": "Name, CNIC, and mobile number are required"}), 400
+        if not name or not cnic or not mobilenumber or not password:
+            return jsonify({"error": "Name, CNIC, and mobile number and password are required"}), 400
 
-        user = ChallanController.add_user(name, cnic, mobilenumber, email)
+        user = ChallanController.add_user(name, cnic, mobilenumber, email,password)
         return jsonify(user), 201
     except Exception as exp:
         return jsonify({'error': str(exp)}), 500
@@ -1708,6 +1741,64 @@ def upload_images():
         traceback.print_exc()
         return jsonify({"error": str(e)}), 500
 
+@app.route('/parallel_simulation-multicameraimages', methods=['POST'])
+def parallel_simulation_upload_images():
+    try:
+        print("==> Incoming request to /parallel_simulation-multicameraimages")
+        print("Form Data:", request.form)
+        print("Files Received:", request.files)
+
+        indices_str = request.form.get('image_indices', '')
+        indices = indices_str.split(',') if indices_str else []
+
+        print(f"Parsed indices: {indices}")
+
+        uploaded_info = []
+        camera_images_list = []
+
+        files = request.files.getlist('images')
+        print(f"Number of images received: {len(files)}")
+
+        for i, image_file in enumerate(files):
+            if i < len(indices):
+                camera_id = indices[i]
+            else:
+                camera_id = str(i)
+
+            print(f"Processing image {i}: camera_id={camera_id}, filename={image_file.filename}")
+
+            if image_file.filename != '':
+                try:
+                    image = Image.open(io.BytesIO(image_file.read()))
+                    camera_images_list.append({
+                        "cam_id": camera_id,
+                        "image": image
+                    })
+
+                    uploaded_info.append({
+                        'camera_id': camera_id,
+                        'filename': image_file.filename,
+                        'status': 'stored in memory'
+                    })
+
+                except Exception as img_err:
+                    print(f"[ERROR] Failed to read image {i}: {img_err}")
+                    continue
+
+        print("Calling detection logic with images:")
+        print(f"camera_images_list: {[item['cam_id'] for item in camera_images_list]}")
+
+        # Call the detection function
+        response, code = ChallanController.SimulationParallel_autoviolationdetection_fromcameraimage(camera_images_list)
+        print("Detection completed. Returning response.")
+        return response, code
+
+    except Exception as e:
+        print("[ERROR] Exception in /parallel_simulation-multicameraimages:", str(e))
+        traceback.print_exc()
+        return jsonify({"error": str(e)}), 500
+
+
 
 @app.route('/get-images/<int:id>', methods=['GET'])
 def get_images_by_violationid (id):
@@ -1836,6 +1927,14 @@ def get_all_nakas():
     except Exception as exp:
         return jsonify({'error': str(exp)}), 500
 
+
+# Get all naka connections              useless
+@app.route('/nakagrapgforflutter', methods=['GET'])
+def get_all_nakas_forFlutter():
+    try:
+        return NakaGraphController.get_naka_graph_for_flutter()
+    except Exception as exp:
+        return jsonify({'error': str(exp)}), 500
 
 # Get naka by ID (query param: ?id=1)
 @app.route('/naka/id', methods=['GET'])
@@ -2053,8 +2152,118 @@ def get_testing():
         print(str(exp))
         return jsonify({'error': str(exp)}), 500
 
+
+
+
+
+
+# ✅ Get all stolen bikes
+@app.route('/stolenbike', methods=['GET'])
+def get_all_stolen_bikes():
+    try:
+        bikes = StolenBikeController.get_all_bikes()
+        return jsonify(bikes), 200
+    except Exception as exp:
+        return jsonify({'error': str(exp)}), 500
+
+
+# ✅ Get stolen bike by ID
+@app.route('/stolenbikebyid', methods=['POST'])
+def get_stolen_bike_by_id():
+    try:
+        data = request.get_json()
+        bike_id = data.get('id')
+        if not bike_id:
+            return jsonify({"error": "Bike ID is required"}), 400
+
+        bike = StolenBikeController.get_bike_by_id(bike_id)
+        return jsonify(bike), 200
+    except Exception as exp:
+        return jsonify({'error': str(exp)}), 500
+
+
+# ✅ Get stolen bike by number plate
+@app.route('/stolenbikebyplate', methods=['POST'])
+def get_stolen_bike_by_plate():
+    try:
+        data = request.get_json()
+        plate = data.get('NumberPlate')
+        if not plate:
+            return jsonify({"error": "Number Plate is required"}), 400
+
+        result = StolenBikeController.get_bike_by_number_plate(plate)
+        return jsonify(result)
+    except Exception as exp:
+        return jsonify({'error': str(exp)}), 500
+
+
+# ✅ Add new stolen bike
+@app.route('/addstolenbike', methods=['POST'])
+def add_stolen_bike():
+    try:
+        data = request.get_json()
+        plate = data.get('NumberPlate')
+        if not plate:
+            return jsonify({"error": "Number Plate is required"}), 400
+
+        result = StolenBikeController.add_bike(data)
+        if 'error' in result:
+            return jsonify(result), 400
+        return jsonify(result), 201
+    except Exception as exp:
+        return jsonify({'error': str(exp)}), 500
+
+
+# ✅ Delete stolen bike by plate
+@app.route('/deletestolenbikebyplate', methods=['DELETE'])
+def delete_stolen_bike_by_plate():
+    try:
+        plate = request.args.get('NumberPlate')
+        if not plate:
+            return jsonify({"error": "Number Plate is required as query parameter"}), 400
+
+        message, code = StolenBikeController.delete_bike_by_plate(plate)
+        return jsonify(message), code
+    except Exception as exp:
+        return jsonify({'error': str(exp)}), 500
+
+
+# ✅ Update stolen bike by plate
+@app.route('/updatestolenbike', methods=['PUT'])
+def update_stolen_bike():
+    try:
+        data = request.get_json()
+        plate = data.get('NumberPlate')
+        if not plate:
+            return jsonify({"error": "Number Plate is required"}), 400
+
+        result = StolenBikeController.update_bike_by_plate(plate, data)
+        return jsonify(result)
+    except Exception as exp:
+        return jsonify({'error': str(exp)}), 500
+
+
+# ✅ Change status of a stolen bike
+@app.route('/changestolenbikestatus', methods=['PUT'])
+def change_stolen_bike_status():
+    try:
+        data = request.get_json()
+        plate = data.get('NumberPlate')
+        new_status = data.get('new_status')
+
+        if not plate or not new_status:
+            return jsonify({"error": "Number Plate and new_status are required"}), 400
+
+        result, code = StolenBikeController.change_bike_status(plate, new_status)
+        return jsonify(result), code
+    except Exception as exp:
+        return jsonify({'error': str(exp)}), 500
+
+
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=4321, debug=True)
+
+#
 # def get_local_ip():
 #     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 #     try:
@@ -2072,4 +2281,4 @@ if __name__ == "__main__":
 # print(f" * Serving on all interfaces: http://0.0.0.0:{port}")
 #
 # serve(Model.Configure.app, host='0.0.0.0', port=4321, threads=50)
-
+#

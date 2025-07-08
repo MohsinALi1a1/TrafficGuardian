@@ -110,6 +110,44 @@ class WardenChowkiController:
         else:
             return {"error": "Warden not found"},404
 
+    @staticmethod
+    def get_all_unassigned_wardens(city_name=None):
+        # Subquery: Get all assigned warden_ids from WardenChowki
+        assigned_warden_ids = db.session.query(WardenChowki.warden_id).subquery()
+
+        # Base query: Unassigned wardens with wardentype != 0
+        query = db.session.query(TrafficWarden).filter(
+            ~TrafficWarden.id.in_(assigned_warden_ids),
+            TrafficWarden.PermissionType != 0
+        )
+
+        # Optional filter by city_name if provided
+        if city_name:
+            city = db.session.query(City).filter(City.name == city_name).first()
+            if city:
+                query = query.filter(TrafficWarden.city_id == city.id)
+            else:
+                return {"message": f"City '{city_name}' not found."}, 404
+
+        unassigned_wardens = query.all()
+
+        if unassigned_wardens:
+            result = []
+            for warden in unassigned_wardens:
+                result.append({
+                    'id': warden.id,
+                    'name': warden.name,
+                    'image_path': warden.image_path,
+                    'badge_number': warden.badge_number,
+                    'address': warden.address,
+                    'cnic': warden.cnic,
+                    'email': warden.email,
+                    'mobile_number': warden.mobile_number,
+                    'city_Name': LocationController.get_city_name_by_id(warden.city_id)
+                })
+            return result, 200
+        else:
+            return {"message": "No unassigned wardens found"}, 404
 
     @staticmethod
     def generate_temp_password(length=8):
