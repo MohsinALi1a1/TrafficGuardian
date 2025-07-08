@@ -2259,6 +2259,32 @@ def change_stolen_bike_status():
     except Exception as exp:
         return jsonify({'error': str(exp)}), 500
 
+@app.route('/check_challanallowed', methods=['POST'])
+def check_challan_allowed():
+    try:
+        data = request.get_json()
+        license_plate = data.get("license_plate")
+
+        if not license_plate:
+            return jsonify({"status": "Error", "reason": "license_plate is required"}), 400
+        response=ChallanController.is_challan_allowed(license_plate)
+        return jsonify(response)
+    except Exception as e:
+        return jsonify({
+            "status": "Error",
+            "reason": str(e)
+        }), 500
+
+
+
+@app.route("/assign-warden-duty", methods=["POST"])
+def assign_warden_duty():
+    try:
+        data = request.get_json()
+        return WardenChowkiController.assign_warden_duties(data)
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=4321, debug=True)

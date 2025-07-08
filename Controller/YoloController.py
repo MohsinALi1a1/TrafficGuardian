@@ -544,9 +544,9 @@ class YoloController:
                 resized_image = cv2.resize(image, dsize)
 
 
-                cv2.imshow(f"Detection Result {i}", resized_image)
-                cv2.waitKey(0)
-                cv2.destroyAllWindows()
+                # cv2.imshow(f"Detection Result {i}", resized_image)
+                # cv2.waitKey(0)
+                # cv2.destroyAllWindows()
 
                 violations_and_plates.append({
                     'violations': violations,
@@ -614,9 +614,9 @@ class YoloController:
                 dsize = (new_width, new_height)
                 resized_image = cv2.resize(image, dsize)
 
-                cv2.imshow(f"Detection Result {i}", resized_image)
-                cv2.waitKey(0)
-                cv2.destroyAllWindows()
+                # cv2.imshow(f"Detection Result {i}", resized_image)
+                # cv2.waitKey(0)
+                # cv2.destroyAllWindows()
 
                 violations_and_plates.append({
                     'violations': violations

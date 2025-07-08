@@ -8,7 +8,7 @@ from Controller import CameraChowkiController, OCR, ImageControllerAndNotificati
 from Model import User, Vehicle, db, Violation, ViolationFine, ViolationHistory, ViolationDetails, Challan, \
     ChallanViolations, ViolationImages, NakaGraph, StolenBike
 from sqlalchemy.exc import SQLAlchemyError
-from datetime import datetime
+from datetime import datetime, timedelta
 import cv2
 import io
 import os
@@ -1094,9 +1094,9 @@ class ChallanController:
                                             print("🚨 Bike is reported as stolen and active!")
                                         else:
                                             print("✅ No active stolen report for this bike.")
-                                        cv2.imshow(f"Cropped License Plate {i + 1}", cropped_plate)
-                                        cv2.waitKey(0)
-                                        cv2.destroyAllWindows()
+                                        # cv2.imshow(f"Cropped License Plate {i + 1}", cropped_plate)
+                                        # cv2.waitKey(0)
+                                        # cv2.destroyAllWindows()
                                         cropped_plate = Image.fromarray(cropped_plate)
                                         image_list.append(cropped_plate)
                                     else:
@@ -1346,4 +1346,169 @@ class ChallanController:
             # Handle exceptions that may occur
             print(str(e))
             return {"message": f"An error occurred: {str(e)}"}, 500
+
+
+    def SimulationParallel_autoviolationdetection_fromFolder(camera_images):
+        try:
+            if not camera_images:
+                print("message: camera_images is empty")
+                return jsonify({"message": "camera_images is empty"}), 400
+
+            for cam_id, image_pair in camera_images.items():
+                image_list = []
+                extracted_plate_text = ""
+                violations_and_plates = []
+                detectedviolations = []
+
+                try:
+                    icam_id = int(cam_id)
+                except ValueError:
+                    print(f"Invalid camera_id: {cam_id}")
+                    continue
+
+                camera = CameraChowkiController.get_camera_by_id(cam_id)
+                if 'error' in camera:
+                    print(f"Camera not found for ID: {cam_id}")
+                    continue
+
+                camera_location = camera.get('Direction')
+                camera_type = camera.get('Camera Type')
+
+                # Ensure exactly 2 images (front, side)
+                if len(image_pair) != 2:
+                    print(f"Camera {cam_id} does not have exactly 2 images.")
+                    continue
+
+                front_image = image_pair[0]
+                side_image = image_pair[1]
+
+                # --- Process Front Image ---
+                print(f"\nProcessing Front image for Camera {cam_id}")
+                image_list.append(front_image)
+                violations_and_plates = Controller.YoloController.detect_violations_from_frontImage(front_image)
+
+                for i, item in enumerate(violations_and_plates):
+                    print(f"Result Front #{i + 1}")
+                    violations = item.get('violations', [])
+                    cropped_plate = item.get('cropped_license_plate')
+
+                    if violations:
+                        print("Violations Detected (Front):")
+                        for violation in violations:
+                            print(f" - {violation}")
+                    else:
+                        print("No violations detected (Front).")
+
+                    if cropped_plate is not None:
+                        enhanced_plate = Controller.YoloController.apply_clahe_on_plate_crop(cropped_plate)
+                        extracted_plate_text = Controller.OCR.NumberExtractor(enhanced_plate)
+                        print(f"Extracted number plate: {extracted_plate_text}")
+                        # cv2.imshow(f"Cropped License Plate {i + 1}", enhanced_plate)
+                        # cv2.waitKey(0)
+                        # cv2.destroyAllWindows()
+                        cropped_plate_img = Image.fromarray(cropped_plate)
+                        image_list.append(cropped_plate_img)
+                    else:
+                        print("No cropped license plate found.")
+
+                # --- Process Side Image ---
+                print(f"\nProcessing Side image for Camera {cam_id}")
+                image_list.append(side_image)
+                detectedviolations = Controller.YoloController.detect_violations_from_sideImage(side_image)
+
+                for i, item in enumerate(detectedviolations):
+                    print(f"Result Side #{i + 1}")
+                    violations = item.get('violations', [])
+                    if violations:
+                        print("Violations Detected (Side):")
+                        for violation in violations:
+                            print(f" - {violation}")
+                    else:
+                        print("No violations detected (Side).")
+
+                # --- Lookup or Insert Bike ---
+                bikenumber = extracted_plate_text
+                print(f"Bike Number of Violator: {bikenumber}")
+
+                try:
+                    bike = ChallanController.get_vehicle_by_licenseplate(bikenumber)
+                    if 'error' in bike:
+                        message = ChallanController.add_vehicle(bikenumber, 'Bike')
+                        if 'Successfully' in message:
+                            bike = ChallanController.get_vehicle_by_licenseplate(bikenumber)
+                    print(f"Bike ID: {bike['id']}")
+                except Exception as e:
+                    print(f"Error in getting/creating bike: {str(e)}")
+                    continue
+
+                # --- Prepare Violation Details ---
+                status = 'Pending'
+                created_date = datetime.today().strftime('%Y-%m-%d')
+                violations_ids = []
+
+                try:
+                    detection_fromfront = violations_and_plates[0].get("violations", [])
+                    detection_fromside = detectedviolations[0].get("violations", [])
+
+                    for v in detection_fromfront:
+                        if v == 'Side Mirrors' and 'Side Mirrors' in detection_fromside:
+                            violations_ids.append(3)
+
+                    for v in detection_fromside:
+                        if v == 'Helmet':
+                            violations_ids.append(1)
+                        elif 'Persons' in v:
+                            violations_ids.append(2)
+
+                except Exception as e:
+                    print(f"Error processing violations: {str(e)}")
+                    continue
+
+                # --- Save Violation Record ---
+                try:
+                    print(f"Saving {len(image_list)} images for camera {cam_id}")
+                    response, code = ChallanController.add_violation_history_and_details(
+                        bike['id'], camera_location, status, cam_id,
+                        violations_ids, image_list, bikenumber
+                    )
+                except Exception as e:
+                    print(f"Error saving violation history: {str(e)}")
+                    continue
+
+            return jsonify({"message": "All camera images processed"}), 200
+
+        except Exception as e:
+            print(f"Unexpected Error: {str(e)}")
+            return jsonify({"message": f"An unexpected error occurred: {str(e)}"}), 500
+
+    def is_challan_allowed(license_plate):
+        try:
+            # Step 1: Get current PC time
+            current_time = datetime.now()
+
+            # Step 2: Fetch last challan
+            last_challan = (
+                Challan.query
+                .filter_by(vehicle_number=license_plate)
+                .order_by(desc(Challan.challan_date))
+                .first()
+            )
+
+            # Step 3: Handle first time challan
+            if not last_challan:
+                print("✅ No previous challan found. Allowed.")
+                return {"status": "Allowed", "reason": "No previous challan"}
+
+            # Step 4: Calculate time difference
+            time_diff = current_time - last_challan.challan_date
+
+            if time_diff > timedelta(hours=2):
+                print(f"✅ Last challan was {time_diff} ago. Allowed.")
+                return {"status": "Allowed", "reason": f"Last challan was {time_diff} ago"}
+            else:
+                print(f"⛔ Last challan was {time_diff} ago. Not allowed.")
+                return {"status": "Not Allowed", "reason": f"Challan recently issued {time_diff} ago"}
+
+        except Exception as e:
+            return {"status": "Error", "reason": str(e)}
 

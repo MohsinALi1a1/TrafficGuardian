@@ -1,3 +1,5 @@
+from flask import jsonify
+
 from Model import db, City, Shift, TrafficWarden, WardenChowki, Chowki, Place
 from Controller import LocationController, CameraChowkiController
 from datetime import datetime
@@ -534,6 +536,45 @@ class WardenChowkiController:
             })
 
         return result_list
+
+    @staticmethod
+    def assign_warden_duties(data):
+        try:
+            warden_ids = data.get("warden_ids")
+            naka_id = data.get("naka_id")
+            shift_id = data.get("shift_id")
+            date_str = data.get("date")
+
+            # --- Validation
+            if not isinstance(warden_ids, list) or not all(isinstance(w, int) for w in warden_ids):
+                return jsonify({"status": "error", "message": "warden_ids must be a list of integers"}), 400
+            if not naka_id or not shift_id or not date_str:
+                return jsonify({"status": "error", "message": "naka_id, shift_id, and date are required"}), 400
+
+            # --- Convert date
+            try:
+                assigned_date = datetime.strptime(date_str, "%Y-%m-%d").date()
+            except ValueError:
+                return jsonify({"status": "error", "message": "Invalid date format, expected YYYY-MM-DD"}), 400
+
+            # --- Save to DB
+            for wid in warden_ids:
+                duty = WardenChowki(
+                    warden_id=wid,
+                    naka_id=naka_id,
+                    shift_id=shift_id,
+                    date=assigned_date
+                )
+                db.session.add(duty)
+
+            db.session.commit()
+
+            return jsonify({"status": "success", "message": f"{len(warden_ids)} duties assigned"}), 200
+
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({"status": "error", "message": str(e)}), 500
+
     # @staticmethod
     # def update_warden_status():
     #
