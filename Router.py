@@ -1,5 +1,6 @@
 import io
 import os
+import threading
 from pydoc import locate
 import socket
 
@@ -2283,10 +2284,14 @@ def assign_warden_duty():
         data = request.get_json()
         return WardenChowkiController.assign_warden_duties(data)
     except Exception as e:
+        print(str(e))
         return jsonify({"status": "error", "message": str(e)}), 500
 
 
 if __name__ == "__main__":
+    # cleanup_thread = threading.Thread(target=ChallanController.clean_old_vehicles(), daemon=True)
+    # cleanup_thread.start()
+
     app.run(host='0.0.0.0', port=4321, debug=True)
 
 #

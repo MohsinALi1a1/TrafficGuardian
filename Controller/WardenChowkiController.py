@@ -561,9 +561,9 @@ class WardenChowkiController:
             for wid in warden_ids:
                 duty = WardenChowki(
                     warden_id=wid,
-                    naka_id=naka_id,
+                    chowki_id=naka_id,
                     shift_id=shift_id,
-                    date=assigned_date
+                    duty_date=assigned_date
                 )
                 db.session.add(duty)
 
@@ -573,6 +573,7 @@ class WardenChowkiController:
 
         except Exception as e:
             db.session.rollback()
+            print(str(e))
             return jsonify({"status": "error", "message": str(e)}), 500
 
     # @staticmethod

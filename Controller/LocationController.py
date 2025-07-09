@@ -1,4 +1,5 @@
-from Model import City,Place,Direction ,db
+from Model import City, Place, Direction, db, PlaceDistance
+
 
 class LocationController:
 
@@ -209,3 +210,38 @@ class LocationController:
         direction.name = new_name
         db.session.commit()
         return {"message": f"Direction name updated from {direction_name} to {new_name}"}, 201
+
+
+    @staticmethod
+    def add_place_distance(from_id, to_id, distance_km):
+        existing = PlaceDistance.query.filter_by(FromPlaceID=from_id, ToPlaceID=to_id).first()
+        if existing:
+            existing.DistanceKM = distance_km  # update if needed
+        else:
+            new_entry = PlaceDistance(
+                FromPlaceID=from_id,
+                ToPlaceID=to_id,
+                DistanceKM=distance_km
+            )
+            db.session.add(new_entry)
+        db.session.commit()
+
+    @staticmethod
+    def get_distance_between_places(from_place_id: int, to_place_id: int) -> float | None:
+        # Try direct match
+        distance_record = PlaceDistance.query.filter_by(
+            FromPlaceID=from_place_id,
+            ToPlaceID=to_place_id
+        ).first()
+
+        # If not found, try reverse (assuming distance is symmetrical)
+        if not distance_record:
+            distance_record = PlaceDistance.query.filter_by(
+                FromPlaceID=to_place_id,
+                ToPlaceID=from_place_id
+            ).first()
+
+        if distance_record:
+            return distance_record.DistanceKM
+        else:
+            return None  # Or raise an error if required

@@ -24,6 +24,14 @@ class CameraChowkiController:
         else:
             return {"error": "Camera not found"}
 
+    @staticmethod
+    def get_camera_by_notify(ID):
+        camera = Camera.query.get_or_404(ID)
+        direction = Direction.query.get_or_404(camera.direction_id)
+        if camera:
+            return {'id': camera.id, 'name': camera.name, 'Camera Type': camera.type, "Direction": direction.name ,"Direction_id":direction.id}
+        else:
+            return {"error": "Camera not found"}
 
     @staticmethod
     def get_camera_by_name(camera_name):
